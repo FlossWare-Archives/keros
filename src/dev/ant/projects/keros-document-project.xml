@@ -1,0 +1,159 @@
+<!--
+
+    A vanilla project for documentation.
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/projects/keros-document-project.xml $
+        
+-->
+<project
+    name    = "keros-document-project"
+    default = "keros-document-project.all"
+    basedir = "."
+    
+    xmlns:ant-contrib            = "http://ant-contrib.sourceforge.net" 
+    xmlns:ivy                    = "antlib:org.apache.ivy.ant"
+    xmlns:keros                  = "http://keros.sourceforge.net"
+    xmlns:keros-base-project     = "http://keros.sourceforge.net/project"
+    xmlns:keros-doucment-project = "http://keros.sourceforge.net/project/document">
+
+
+    <description>
+        Keros project for documentation
+    </description>
+
+
+    <!--
+
+        Imports...
+
+    -->
+    <import  file = "../keros-base-project.xml"  description = "Contains Keros project functionality."/>
+
+    <keros:auto-property  property = "keros-document-project.DIR_NAME"     default = "doc"/>
+    <keros:auto-property  property = "keros-document-project.HOME"         default = "${keros-base-project.HOME}/${keros-document-project.DIR_NAME}"/>
+
+    <!--
+
+        If a release version has been defined, we will set our default
+        release name to be the project name PLUS the version number...
+        otherwise its just the project directory name.
+
+    -->
+    <ant-contrib:if>
+        <not>
+            <isset  property = "keros-document-project.release.FILE_NAME"/>
+        </not>
+
+        <ant-contrib:then>
+            <keros:conditional-set-property  property = "keros-document-project.release.VERSION"  name = "keros-document-project.release.FILE_NAME"  set = "${keros-document-project.project.DIR_NAME}-${keros-document-project.release.VERSION}"  unset = "${keros-document-project.project.DIR_NAME}"/>
+
+            <keros:conditional-set-property  property = "keros-document-project.release.PREFIX"   name = "keros-document-project.release.FILE_NAME"  set = "${keros-document-project.release.PREFIX}${keros-document-project.release.FILE_NAME}"   unset = "${keros-document-project.release.FILE_NAME}"/>
+
+            <keros:conditional-set-property  property = "keros-document-project.release.POSTFIX"  name = "keros-document-project.release.FILE_NAME"  set = "${keros-document-project.release.FILE_NAME}${keros-document-project.release.POSTFIX}"  unset = "${keros-document-project.release.FILE_NAME}"/>
+        </ant-contrib:then>
+    </ant-contrib:if>
+
+
+    <!--
+
+        Documentation properties.
+
+    -->
+    <keros:auto-property  property = "keros-document-project.INDEX" default = "index.html"/>
+
+
+    <!-- ======================================================================== -->
+
+    <keros:auto-property  property = "keros-document-project.source.DIR_NAME"             default = "doc"/>
+    <keros:auto-property  property = "keros-document-project.source.HOME"                 default = "${keros-base-project.dev.HOME}/${keros-document-project.source.DIR_NAME}"/>
+
+    <keros:auto-property  property = "keros-document-project.generated.DIR_NAME"          default = "doc"/>
+    <keros:auto-property  property = "keros-document-project.generated.HOME"              default = "${keros-base-project.generated.HOME}/${keros-document-project.generated.DIR_NAME}"/>
+
+    <keros:auto-property  property = "keros-document-project.release.generated.DIR_NAME"  default = "doc"/>
+    <keros:auto-property  property = "keros-document-project.release.generated.HOME"      default = "${keros-base-project.release.generated.HOME}/${keros-document-project.release.generated.DIR_NAME}"/>
+
+
+    <path  id = "keros-document-project.release.path.REF_ID"  description = "Default path for a document release.">
+        <path  location = "${keros-document-project.source.HOME}"/>
+        <path  location = "${keros-document-project.generated.HOME}"/>
+    </path>
+
+    <keros:auto-property  property = "keros-document-project.release.PATH"  default = "keros-document-project.release.path.REF_ID"  description = "Property that holds the name of the document release's path ref id."/>
+
+
+    <!--
+        
+        Clean up the release documentation...
+
+    -->
+    <target  name = "keros-document-project.release.clean"  description = "Clean up the release documentation">
+        <delete  dir = "${keros-document-project.release.generated.HOME}"/>
+        <mkdir   dir = "${keros-document-project.release.generated.HOME}"/>
+    </target>
+
+
+    <!--
+
+        Override for generating project specific documentation.
+
+    -->
+    <target  name = "keros-document-project.generate"  description = "Override for project specific documentation generation."/>
+
+    <!--
+
+        Provides default logic for creating document releases...
+
+    -->
+    <target  name = "keros-document-project.release"  depends = "keros-document-project.generate"  unless = "keros-document-project.release.SKIP"  description = "Default logic to create document releases">
+        <keros:release  dir = "${keros-document-project.release.generated.HOME}"  stage-dir = "${keros-base-project.release.HOME}"  base-file = "${keros-document-project.release.FILE_NAME}" base-dir="${keros-document-project.release.FILE_NAME}">
+
+            <keros:release-fileset>
+                <path  refid = "${keros-document-project.release.PATH}"/>
+            </keros:release-fileset>
+
+            <keros:post-stage-processing>
+                <keros:conditional-set-property  name = "keros-document-project.release.CREATE_DOCUMENT_RELEASE_VERSION"  property = "keros-document-project.release.VERSION"  set = "${keros-document-project.release.VERSION}"  unset = "${keros-base-project.release.VERSION}"  is-warnable = "false"/>
+                <replace  dir = "${keros-document-project.release.generated.HOME}"  token = "@keros-base-project.release.VERSION@"  value = "${keros-document-project.release.CREATE_DOCUMENT_RELEASE_VERSION}"/>
+            </keros:post-stage-processing>
+        </keros:release>
+    </target>
+
+
+    <!--
+
+        Overridden from keros-base-project.xml - for a document the release is simply documentation.
+
+    -->
+    <target  name = "keros-base-project.release"  depends = "keros-document-project.release"/>
+
+
+    <!--
+
+        Will print all properties to the console.
+
+    -->
+    <target  name = "keros-document-project.print.properties"  description = "Displays properties">
+        <echo>
+            ------------------------------------------------------------------
+
+                                KEROS DOCUMENT PROPERTIES
+
+            ------------------------------------------------------------------
+
+            keros-document-project.source.DIR_NAME             =  ${keros-document-project.source.DIR_NAME}
+            keros-document-project.source.HOME                 =  ${keros-document-project.source.HOME}
+
+            keros-document-project.generated.DIR_NAME          =  ${keros-document-project.generated.DIR_NAME}
+            keros-document-project.generated.HOME              =  ${keros-document-project.generated.HOME}
+
+            keros-document-project.release.generated.DIR_NAME  =  ${keros-document-project.release.generated.DIR_NAME}
+            keros-document-project.release.generated.HOME      =  ${keros-document-project.release.generated.HOME}
+        </echo>
+    </target>
+
+</project>

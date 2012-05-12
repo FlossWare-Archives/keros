@@ -1,0 +1,3760 @@
+<!--
+
+    Standard Keros functionality.  This works without any thrid party libraries - essentially "stock" Ant.
+
+    Modifications:
+        $Date: 2010-01-30 15:12:16 -0500 (Sat, 30 Jan 2010) $
+        $Revision: 215 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/keros.xml $
+        
+-->
+<project
+    name                           = "keros"
+    default                        = "keros.print-properties"
+    basedir                        = "."
+
+    xmlns:ant-contrib              = "http://ant-contrib.sourceforge.net"
+    xmlns:bean-scripting-framework = "http://www.gtlib.gatech.edu/pub/apache/jakarta/bsf"
+    xmlns:castor                   = "http://www.castor.org"
+    xmlns:ivy                      = "antlib:org.apache.ivy.ant"
+    xmlns:keros                    = "http://keros.sourceforge.net">
+
+
+    <!--
+
+        Give the property @{property} the value @{value} if @{property} has not been set.  This macrodef
+        is library agnostic - it requires no third party libraries.
+
+        @Attributes
+            @attribute: @{dir}         = the name of the directory that should exist.
+
+            @attribute: @{error-msg}   = the message to display if @{dir} does not exist.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef  name = "property-default"  uri = "http://keros.sourceforge.net"  description = "Give a property a default value if not set">
+        <attribute  name = "name"           description = "The name of the property for which a default value may be set"/>
+        <attribute  name = "default-value"  description = "If @{property} is not set, this is the valeu that it will have as a default"/>
+        <attribute  name = "description"    default = ""  description = "Information about calling this macro"/>
+
+        <sequential>
+            <!--
+
+                Set the dir where Keros can store state...  By default it is the
+                user's home directory and in there a directory entitled .keros
+
+            -->
+            <condition  property = "@{name}"  value = "@{default-value}"  description = "Trying to set the location where state may be maintained">
+                <not>
+                    <isset  property = "@{name}"/>
+                </not>
+            </condition>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Get the environment variables...
+
+    -->
+    <property  environment = "keros.ENVIRONMENT"  description = "Store environment variables in a property"/>
+
+
+    <!--
+
+        Set up default keros properties...
+
+    -->
+    <dirname  file = "${ant.file}"  property = "keros.build.HOME"  description = "Directory of build file"/>
+
+    <keros:property-default  name = "keros.project.HOME"     default-value = "${keros.build.HOME}"                     description = "Directory containing the Ant file"/>
+    <keros:property-default  name = "keros.properties.FILE"  default-value = "${keros.project.HOME}/keros.properties"  description = "Default file where Keros properties can be set"/>
+
+
+    <!--
+
+        Allow initial properties to be set...
+
+    -->
+    <property  file = "${keros.properties.FILE}"  description = "Load property file into Keros' properties"/>
+
+    <dirname   file = "${ant.file.keros}"  property = "keros.ant.HOME"  description = "Directory where self exists"/>
+    <dirname   file = "${keros.ant.HOME}"  property = "keros.HOME"      description = "Directory containing Keros"/>
+
+    <keros:property-default  name = "keros.resources.DIR_NAME"  default-value = "resources"                                  description = "Directory name for resources"/>
+    <keros:property-default  name = "keros.resources.HOME"      default-value = "${keros.HOME}/${keros.resources.DIR_NAME}"  description = "Directory containing resources"/>
+
+    <keros:property-default  name = "keros.properties.DIR_NAME"  default-value = "properties"                                            description = "Directory name for properties"/>
+    <keros:property-default  name = "keros.properties.HOME"      default-value = "${keros.resources.HOME}/${keros.properties.DIR_NAME}"  description = "Directory containing properties"/>
+
+    <!--
+
+        Load specific properties for keros.xml itself...
+
+    -->
+    <property  file = "${keros.properties.HOME}/keros.properties"  description = "Load Keros specific properties"/>
+
+
+    <!--
+    
+        Set-up Keros standard properties.
+
+    -->
+    <keros:property-default  name = "keros.VERSION"       default-value = "${keros.property-default.VERSION}"       description = "Release version"/>
+    <keros:property-default  name = "keros.state.HOME"    default-value = "${keros.property-default.state.HOME}"    description = "Home (root) directory where Keros can maintain state"/>
+    <keros:property-default  name = "keros.version.HOME"  default-value = "${keros.property-default.version.HOME}"  description = "directory where Keros can maintain state"/>
+    
+    <keros:property-default  name = "keros.lib.DIR_NAME"     default-value = "${keros.property-default.lib.DIR_NAME}"     description = "Directory name for libraries"/>
+    <keros:property-default  name = "keros.dependency.HOME"  default-value = "${keros.property-default.dependency.HOME}"  description = "Directory name for dependency libraries"/>
+
+    <!--
+
+        Mostly a hack so we can use this file directly from the Keros project itself -
+        meaning this file is in src/dev/ant not ant.  This is important as the lib
+        dir will be a relative dir diff depending on a Keros release or in the Keros
+        project itself.
+
+    -->
+    <condition  property = "keros.lib.HOME"  value = "${keros.HOME}/${keros.lib.DIR_NAME}">
+        <available  file = "${keros.HOME}/${keros.lib.DIR_NAME}"/>
+    </condition>
+
+    <condition  property = "keros.lib.HOME"  value = "${keros.HOME}/../${keros.lib.DIR_NAME}">
+        <and>
+            <available  file = "${keros.HOME}/../${keros.lib.DIR_NAME}"/>
+
+            <not>
+                <isset  property = "keros.lib.HOME"/>
+            </not>
+        </and>
+    </condition>
+
+    <condition  property = "keros.lib.HOME"  value = "${keros.HOME}/../../${keros.lib.DIR_NAME}">
+        <and>
+            <available  file = "${keros.HOME}/../../${keros.lib.DIR_NAME}"/>
+
+            <not>
+                <isset  property = "keros.lib.HOME"/>
+            </not>
+        </and>
+    </condition>
+
+    <condition  property = "keros.lib.HOME"  value = "${keros.HOME}/../../../${keros.lib.DIR_NAME}">
+        <and>
+            <available  file = "${keros.HOME}/../../../${keros.lib.DIR_NAME}"/>
+
+            <not>
+                <isset  property = "keros.lib.HOME"/>
+            </not>
+        </and>
+    </condition>
+
+
+    <keros:property-default  name = "keros.doc.HOME"  default-value = "${keros.property-default.doc.HOME}"  description = "Directory containing documentation"/>
+    <keros:property-default  name = "keros.xsl.HOME"  default-value = "${keros.property-default.xsl.HOME}"  description = "Directory containing XSLT's"/>
+
+    <keros:property-default  name = "keros.ivy.HOME"  default-value = "${keros.lib.HOME}/ivy"               description = "Directory containing Ivy jars"/>
+
+
+    <!--
+        Ivy definition...
+    -->
+    <taskdef  resource = "org/apache/ivy/ant/antlib.xml"  uri = "antlib:org.apache.ivy.ant"  description = "Needed to use ivy." >
+        <classpath>
+            <fileset  dir = "${keros.ivy.HOME}"  includes = "*.jar"/>
+        </classpath>
+    </taskdef>
+
+    <ivy:resolve   type = "jar"  file = "${keros.ant.HOME}/keros-ivy.xml"/>
+    <ivy:retrieve  type = "jar"  file = "${keros.ant.HOME}/keros-ivy.xml"  pattern = "${keros.dependency.HOME}/[artifact].[ext]"/>
+
+    <!--
+        Ant Contrib definition...
+    -->
+    <taskdef  resource = "net/sf/antcontrib/antlib.xml"  uri = "http://ant-contrib.sourceforge.net"  description = "Needed to use ant-contrib." >
+        <classpath>
+            <fileset  dir = "${keros.dependency.HOME}"  includes = "*.jar"/>
+        </classpath>
+    </taskdef>
+
+
+    <!--
+
+        Downloads and unpacks a tar.bz2.
+
+        @Attributes
+            @attribute: @{url}           = the name of the directory that should exist.
+
+            @attribute: @{download-dir}  = directory to perform download
+
+            @attribute: @{download-file} = file name of @{url} for download
+
+            @attribute: @{install-dir}   = installation directory
+
+            @attribute: @{description}   = information about calling this macro.
+
+        @Elements
+            @element: @{depends}         = All dependency work should be placed within this element.
+            
+    -->
+    <macrodef  name = "install-tar-bz2"  uri = "http://keros.sourceforge.net"  description = "Download and install a tar.bz2">
+        <attribute  name = "url"            description = "The URL containing a tar.bz2 file for download"/>
+        <attribute  name = "download-dir"   description = "Directory to perform download"/>
+        <attribute  name = "download-file"  description = "File name of @{url} for download"/>
+        <attribute  name = "install-dir"    description = "Installation directory"/>
+        <attribute  name = "description"    default = ""  description = "Information about calling this macro"/>
+
+        <element  name = "depends"   optional = "true"  description = "Include any dependency work here.  Will be called after installation."/>
+
+        <sequential>
+            <mkdir   dir  = "@{download-dir}"/>
+            <mkdir   dir  = "@{install-dir}"/>
+
+            <get      src = "@{url}"  dest = "@{download-dir}/@{download-file}"  usetimestamp = "true"/>
+            <bunzip2  src = "@{download-dir}/@{download-file}"      dest = "@{download-dir}/@{download-file}.tar"/>
+            <untar    src = "@{download-dir}/@{download-file}.tar"  dest = "@{install-dir}"/>
+
+            <depends/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Downloads and unpacks a tar.gz.
+
+        @Attributes
+            @attribute: @{url}           = the name of the directory that should exist.
+
+            @attribute: @{download-dir}  = directory to perform download
+
+            @attribute: @{download-file} = file name of @{url} for download
+
+            @attribute: @{install-dir}   = installation directory
+
+            @attribute: @{description}   = information about calling this macro.
+
+        @Elements
+            @element: @{depends}         = All dependency work should be placed within this element.
+            
+    -->
+    <macrodef  name = "install-tar-gz"  uri = "http://keros.sourceforge.net"  description = "Download and install a tar.gz">
+        <attribute  name = "url"            description = "The URL containing a tar.gz file for download"/>
+        <attribute  name = "download-dir"   description = "Directory to perform download"/>
+        <attribute  name = "download-file"  description = "File name of @{url} for download"/>
+        <attribute  name = "install-dir"    description = "Installation directory"/>
+        <attribute  name = "description"    default = ""  description = "Information about calling this macro"/>
+
+        <element  name = "depends"   optional = "true"  description = "Include any dependency work here.  Will be called after installation."/>
+
+        <sequential>
+            <mkdir   dir  = "@{download-dir}"/>
+            <mkdir   dir  = "@{install-dir}"/>
+
+            <get     src = "@{url}"  dest = "@{download-dir}/@{download-file}"  usetimestamp = "true"/>
+            <gunzip  src = "@{download-dir}/@{download-file}"      dest = "@{download-dir}/@{download-file}.tar"/>
+            <untar   src = "@{download-dir}/@{download-file}.tar"  dest = "@{install-dir}"/>
+
+            <depends/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Install a library file from an application.
+
+        @Attributes
+            @attribute: @{url}           = the name of the directory that should exist.
+
+            @attribute: @{download-dir}  = directory to perform download
+
+            @attribute: @{download-file} = file name of @{url} for download
+
+            @attribute: @{lib-dir}       = library directory where @{includes} will be copied
+
+            @attribute: @{description}   = information about calling this macro.
+
+        @Elements
+            @element: @{depends}         = All dependency work should be placed within this element.
+            
+    -->
+    <macrodef  name = "lib-install-file"  uri = "http://keros.sourceforge.net"  description = "Install a library jar">
+        <attribute  name = "url"            description = "The URL containing a tar.bz2 file for download"/>
+        <attribute  name = "download-file"  description = "File name of @{url} for download"/>
+        <attribute  name = "lib-dir"        description = "Library directory where @{includes} will be copied"/>
+        <attribute  name = "description"    default = ""  description = "Information about calling this macro"/>
+
+        <element  name = "depends"   optional = "true"  description = "Include any dependency work here.  Will be called after installation."/>
+
+        <sequential>
+            <mkdir  dir = "@{lib-dir}"/>
+            <get    src = "@{url}"  dest = "@{lib-dir}/@{download-file}"  usetimestamp = "true"/>
+
+            <depends/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Install a library from an application.  Library is in tar.bz2 format.
+
+        @Attributes
+            @attribute: @{url}           = the name of the directory that should exist.
+
+            @attribute: @{download-dir}  = directory to perform download
+
+            @attribute: @{download-file} = file name of @{url} for download
+
+            @attribute: @{install-dir}   = installation directory
+
+            @attribute: @{lib-dir}       = library directory where @{includes} will be copied
+
+            @attribute: @{description}   = information about calling this macro.
+
+        @Elements
+            @element: @{includes}        = Resource collection from @{install-dir} that will be copied to !{lib-dir}.
+
+            @element: @{depends}         = All dependency work should be placed within this element.
+            
+    -->
+    <macrodef  name = "lib-install-tar-bz2"  uri = "http://keros.sourceforge.net"  description = "Install a library from an application">
+        <attribute  name = "url"            description = "The URL containing a tar.bz2 file for download"/>
+        <attribute  name = "download-dir"   description = "Directory to perform download"/>
+        <attribute  name = "download-file"  description = "File name of @{url} for download"/>
+        <attribute  name = "install-dir"    description = "Installation directory"/>
+        <attribute  name = "lib-dir"        description = "Library directory where @{includes} will be copied"/>
+        <attribute  name = "description"    default = ""  description = "Information about calling this macro"/>
+
+        <element  name = "includes"  description = "Should define a resource collection from @{install-dir} that will be copied to @{lib-dir}"/>
+
+        <element  name = "depends"   optional = "true"  description = "Include any dependency work here.  Will be called after installation."/>
+
+        <sequential>
+            <mkdir   dir  = "@{download-dir}"/>
+            <mkdir   dir  = "@{install-dir}"/>
+
+            <get      src = "@{url}"  dest = "@{download-dir}/@{download-file}"  usetimestamp = "true"/>
+            <bunzip2  src = "@{download-dir}/@{download-file}"      dest = "@{download-dir}/@{download-file}.tar"/>
+            <untar    src = "@{download-dir}/@{download-file}.tar"  dest = "@{install-dir}"/>
+
+            <mkdir  dir   = "@{lib-dir}"/>
+            <copy   todir = "@{lib-dir}"  overwrite = "true"  flatten = "true">
+                <includes/>
+            </copy>
+
+            <depends/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Install a library from an application.  Library is in tar.gz format.
+
+        @Attributes
+            @attribute: @{url}           = the name of the directory that should exist.
+
+            @attribute: @{download-dir}  = directory to perform download
+
+            @attribute: @{download-file} = file name of @{url} for download
+
+            @attribute: @{install-dir}   = installation directory
+
+            @attribute: @{lib-dir}       = library directory where @{includes} will be copied
+
+            @attribute: @{description}   = information about calling this macro.
+
+        @Elements
+            @element: @{includes}        = Resource collection from @{install-dir} that will be copied to !{lib-dir}.
+
+            @element: @{depends}         = All dependency work should be placed within this element.
+            
+    -->
+    <macrodef  name = "lib-install-tar-gz"  uri = "http://keros.sourceforge.net"  description = "Install a library from an application">
+        <attribute  name = "url"            description = "The URL containing a tar.bz2 file for download"/>
+        <attribute  name = "download-dir"   description = "Directory to perform download"/>
+        <attribute  name = "download-file"  description = "File name of @{url} for download"/>
+        <attribute  name = "install-dir"    description = "Installation directory"/>
+        <attribute  name = "lib-dir"        description = "Library directory where @{includes} will be copied"/>
+        <attribute  name = "description"    default = ""  description = "Information about calling this macro"/>
+
+        <element  name = "includes"  description = "Should define a resource collection from @{install-dir} that will be copied to @{lib-dir}"/>
+
+        <element  name = "depends"   optional = "true"  description = "Include any dependency work here.  Will be called after installation."/>
+
+        <sequential>
+            <mkdir   dir  = "@{download-dir}"/>
+            <mkdir   dir  = "@{install-dir}"/>
+
+            <get     src = "@{url}"  dest = "@{download-dir}/@{download-file}"  usetimestamp = "true"/>
+            <gunzip  src = "@{download-dir}/@{download-file}"      dest = "@{download-dir}/@{download-file}.tar"/>
+            <untar   src = "@{download-dir}/@{download-file}.tar"  dest = "@{install-dir}"/>
+
+            <mkdir  dir   = "@{lib-dir}"/>
+            <copy   todir = "@{lib-dir}"  overwrite = "true"  flatten = "true">
+                <includes/>
+            </copy>
+
+            <depends/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Install a library from an application.  Library is in zip format.
+
+        @Attributes
+            @attribute: @{url}           = the name of the directory that should exist.
+
+            @attribute: @{download-dir}  = directory to perform download
+
+            @attribute: @{download-file} = file name of @{url} for download
+
+            @attribute: @{install-dir}   = installation directory
+
+            @attribute: @{lib-dir}       = library directory where @{includes} will be copied
+
+            @attribute: @{description}   = information about calling this macro.
+
+        @Elements
+            @element: @{includes}        = Resource collection from @{install-dir} that will be copied to !{lib-dir}.
+
+            @element: @{depends}         = All dependency work should be placed within this element.
+            
+    -->
+    <macrodef  name = "lib-install-zip"  uri = "http://keros.sourceforge.net"  description = "Install a library from an application">
+        <attribute  name = "url"            description = "The URL containing a tar.bz2 file for download"/>
+        <attribute  name = "download-dir"   description = "Directory to perform download"/>
+        <attribute  name = "download-file"  description = "File name of @{url} for download"/>
+        <attribute  name = "install-dir"    description = "Installation directory"/>
+        <attribute  name = "lib-dir"        description = "Library directory where @{includes} will be copied"/>
+        <attribute  name = "description"    default = ""  description = "Information about calling this macro"/>
+
+        <element  name = "includes"  description = "Should define a resource collection from @{install-dir} that will be copied to @{lib-dir}"/>
+
+        <element  name = "depends"   optional = "true"  description = "Include any dependency work here.  Will be called after installation."/>
+
+        <sequential>
+            <mkdir   dir  = "@{download-dir}"/>
+            <mkdir   dir  = "@{install-dir}"/>
+
+            <get    src = "@{url}"  dest = "@{download-dir}/@{download-file}"  usetimestamp = "true"/>
+            <unzip  src = "@{download-dir}/@{download-file}"  dest = "@{install-dir}"/>
+
+            <mkdir  dir   = "@{lib-dir}"/>
+            <copy   todir = "@{lib-dir}"  overwrite = "true"  flatten = "true">
+                <includes/>
+            </copy>
+
+            <depends/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Sort the files contained in a directory "naturally." 
+
+        The result is:
+            1.sql, 2.sql, 10.sql, 11.sql
+
+        @Attributes
+            @attribute: @{dir}         = the name of the directory containing files to sort.
+
+            @attribute: @{padding}     = the padding to use when making all file names the same length.  Defaults to spaces.
+
+            @attribute: @{property}    = name of the property to set that will contain the sorted list.
+
+            @attribute: @{delimeter}   = the delimiter used between file names.  Defaults to comma.
+
+            @attribute: @{description} = information about calling this macro.
+
+
+        @Example
+            @example: @{dir} contains the following file:  1.sql 10.sql 11.sql 2.sql
+
+
+        @Result
+            @result: @{property} = 1.sql,2.sql,10.sql,11.sql
+
+    -->
+    <scriptdef
+        name        = "sort-files"
+        language    = "beanshell"
+        uri         = "http://keros.sourceforge.net" >
+
+        <classpath>
+            <fileset  dir = "${keros.dependency.HOME}"  includes = "*.jar"/>
+        </classpath>
+
+        <attribute  name = "dir"/>
+        <attribute  name = "property"/>
+        <attribute  name = "padding"/>
+        <attribute  name = "delimiter"/>
+        <attribute  name = "description"/>
+
+        <![CDATA[
+                import java.io.File;
+                import java.util.TreeMap;
+
+                File dir = new File ( attributes.get ( "dir" ) );
+
+                if ( dir.exists () && dir.isDirectory () )
+                {
+                    String[] files =  dir.list ();
+
+                    int maxLen = 0;
+
+                    for ( String file : files )
+                    {
+                        if ( file.length () > maxLen )
+                        {
+                            maxLen = file.length ();
+                        }
+                    }
+
+                    StringBuilder sb = new StringBuilder ();
+
+                    String padding = attributes.get ( "padding" );
+                    if ( null == padding  || "".equals ( padding ) )
+                    {
+                        padding = " ";
+                    }
+
+                    for ( int len = 0; len < maxLen; len++ )
+                    {
+                        sb.append ( padding );
+                    }
+
+                    String padding = sb.toString ();
+
+                    TreeMap treeMap = new TreeMap ();
+
+                    for ( String file : files )
+                    {
+                        if ( file.length () < maxLen )
+                        {
+                            treeMap.put ( padding.substring ( 0, maxLen - file.length () ) + file, file );
+                        }
+                        else
+                        {
+                            treeMap.put ( file, file );
+                        }
+                    }
+
+                    int fileCount = 1;
+
+                    String delimiter = attributes.get ( "delimeter" );
+                    if ( null == delimiter  || "".equals ( delimiter ) )
+                    {
+                        delimiter = ",";
+                    }
+
+                    sb.setLength ( 0 );
+
+                    for ( String entry : treeMap.keySet () )
+                    {
+                        sb.append ( treeMap.get ( entry ) );
+
+                        if ( fileCount++ < files.length )
+                        {
+                            sb.append ( delimiter );
+                        }
+                    }
+
+                    project.setProperty ( attributes.get ( "property" ), sb.toString () );
+                }
+                else
+                {
+                    project.setProperty ( attributes.get ( "property" ), "" );
+                }
+        ]]>
+    </scriptdef>
+
+
+    <!--
+
+        Computes the locale of the current JVM to the property define as @{property}.
+
+        @Attributes
+            @attribute: @{property} = the name of the property to set to the locale of the current JVM.
+
+    -->
+    <scriptdef
+        name        = "compute-locale"
+        language    = "beanshell"
+        description = "Sets the locale of the current JVM."
+        uri         = "http://keros.sourceforge.net" >
+
+        <classpath>
+            <fileset  dir = "${keros.dependency.HOME}"  includes = "*.jar"/>
+        </classpath>
+
+        <attribute  name = "property"/>
+
+        <![CDATA[
+            import java.util.Locale;
+
+            project.setProperty ( attributes.get ( "property" ), Locale.getDefault ().toString () );
+        ]]>
+    </scriptdef>
+
+
+    <!--
+    
+        Set-up Keros local related properties.
+
+    -->
+    <keros:compute-locale  property = "keros.LOCALE"  description = "Our current locale"/>
+
+    <keros:property-default  name = "keros.locale.HOME"  default-value = "${keros.resources.HOME}/${keros.LOCALE}"/>
+
+
+    <!-- 
+
+        Import locale specific messages.
+
+    -->
+    <property  file = "${keros.locale.HOME}/keros-messages.properties"  description = "Import local specific messages."/>
+
+
+    <!--
+
+        Import any properties used by keros.
+
+    -->
+
+
+    <!--
+
+        Compute the class' branch information converting dots to OS file separator.
+        By "branch" the meaning is to convey the branch in the CLASSPATH.  The path
+        representation of @{class-name} is stored in property @{property}
+
+
+        @Attributes
+            @attribute: @{class-name}  = the fully qualified class name to convert.
+
+            @attribute: @{property}    = the property to store the class branch information.
+
+            @attribute: @{description} = information about calling this macro.
+
+
+        @Example
+            @example: @{class-name} = com.foo.bar.Alpha
+
+
+        @Result
+            @result: @{property} = com/foo/bar/Alpha
+
+    -->
+    <macrodef
+        name        = "compute-class-branch"
+        description = "Compute the class' branch information converting dots to OS file separator.  By branch the meaning is to convey the branch in the CLASSPATH.  The path representation of @{class-name} is stored in property @{property}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "class-name"   description = "The fully qualified class name."/>
+        <attribute  name = "property"     description = "The property to set when @{class-name} is converted to path notation."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                Convert dots to OS path separator.
+
+            -->
+            <keros:compute-replacement  str = "@{class-name}"  to-replace = "."  replacement = "${file.separator}"  property = "@{property}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Compute information about a class - namely its parent dir and file name (less the .class).
+
+        @Attributes
+            @attribute: @{class-name}    = the fully qualified name of a class for which the directory name and file name are sought.
+
+            @attribute: @{dir-property}  = the name of the property that will hold the directory of @{class-name}.
+
+            @attribute: @{file-property} = the name of the property to store the file name of @{class-name}.
+
+            @attribute: @{description}   = information about calling this macro.
+
+
+        @Example
+            @example: @{class-name} = com.foo.bar.Alpha
+
+
+        @Result
+            @result: @{dir-property}  = com/foo/bar
+
+            @result: @{file-property} = Alpha
+
+      -->
+    <macrodef
+        name        = "compute-class-info"
+        description = "Compute information about a class - namely its parent dir and file name (less the .class)."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "class-name"     description = "The fully qualified class name for which a directory and file name are sought."/>
+        <attribute  name = "dir-property"   description = "The name of the property that will hold the directory of @{class-name}."/>
+        <attribute  name = "file-property"  description = "The name of the property that will hold the file name of @{class-name}."/>
+        <attribute  name = "description"    default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:var  name = "@{dir-property}"   unset = "true"  description = "Unset the directory property"/>
+            <ant-contrib:var  name = "@{file-property}"  unset = "true"  description = "Unset the file property"/>
+
+            <!--
+
+                Convert dots to OS path separator.  We are prefixing the
+                class name with the OS specific file separator because
+                when calling <dirname> without it, the dirname computed
+                will represent the current working dir PLUS the dir name.
+                For instance, if the current working dir is /home/foo/bar
+                and we reqest a dirname for one/two/three, the computed
+                value is /home/foo/bar/one/two...
+
+            -->
+            <keros:compute-class-branch  class-name = "${file.separator}@{class-name}"  property = "keros.compute-class-info.COMPUTE_CLASS_INFO"/>
+
+            <dirname   file = "${keros.compute-class-info.COMPUTE_CLASS_INFO}"  property = "keros.compute-class-info.COMPUTE_CLASS_INFO_DIR"/>
+            <basename  file = "${keros.compute-class-info.COMPUTE_CLASS_INFO}"  property = "@{file-property}"/>
+
+            <keros:compute-branch  root = "${file.separator}"  full-path = "${keros.compute-class-info.COMPUTE_CLASS_INFO_DIR}"  property = "@{dir-property}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        This will create a release that will have a tar, zip, bzip and gzip files.
+
+
+        @Attributes
+
+            @attribute: @{dir}         = the directory to create the release files.
+
+            @attribute: @{stage-dir}   = the staging directory where the created release files will be copied when completed.
+
+            @attribute: @{base-file}   = the base name of the tar, zip, bzip and gzip files.
+
+            @attribute: @{base-dir}    = Directory name where the release when unpacked will reside.
+
+            @attribute: @{description} = information about calling this macro.
+
+
+        @Elements
+
+            @element:  @{pre-processing}        = will perform any pre-processing before the release is created.
+
+            @element:  @{pre-stage-processing}  = will perform an pre-stage processing before copying files.
+
+            @element:  @{release-fileset}       = should contain a fileset that will include all release files.
+
+            @element:  @{post-stage-processing} = will perform an post-stage processing before tar'ing/gzip/bzip/zip work.
+
+            @element:  @{post-processing}       = will perform any post-processing after the release is created.
+
+    -->
+    <macrodef
+        name = "release"
+        description = "Create a release."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "dir"          description = "The directory to create the release files."/>
+        <attribute  name = "stage-dir"    description = "The staging directory where the created release files will be copied when completed."/>
+        <attribute  name = "base-file"    description = "The base name of the tar, zip, bzip and gzip files."/>
+        <attribute  name = "base-dir"     default = "@{base-file}"  description = "Directory name where the release when unpacked will reside."/>
+        <attribute  name = "description"  default = ""              description = "Information about this macro call."/>
+
+        <element  name = "pre-processing"         optional = "true"  description = "Will perform any pre-processing before the release is created."/>
+        <element  name = "pre-stage-processing"   optional = "true"  description = "Will perform any pre-stage processing before copying files."/>
+        <element  name = "release-fileset"        description = "Should contain a fileset that will include all release files"/>
+        <element  name = "post-stage-processing"  optional = "true"  description = "Will perform any post-stage processing before tar'ing/gzip/bzip/zip work."/>
+        <element  name = "post-processing"        optional = "true"  description = "Will perform any post-processing after the release is created."/>
+
+        <sequential>
+            <pre-processing/>
+
+            <mkdir  dir = "@{dir}"/>
+            <mkdir  dir = "@{stage-dir}"/>
+
+            <pre-stage-processing/>
+
+            <path  id = "keros-base-project.release.REF_ID">
+                <release-fileset/>
+            </path>
+
+            <keros:copy-ref-id  src-ref-id = "keros-base-project.release.REF_ID"  dest-dir = "@{dir}"/>
+
+            <post-stage-processing/>
+
+            <tar  destfile = "@{stage-dir}/@{base-file}.tar">
+                <tarfileset  dir = "@{dir}"  prefix = "@{base-dir}"/>
+            </tar>
+
+            <bzip2  src = "@{stage-dir}/@{base-file}.tar"  destfile = "@{stage-dir}/@{base-file}.tar.bz2"/>
+            <gzip   src = "@{stage-dir}/@{base-file}.tar"  destfile = "@{stage-dir}/@{base-file}.tar.gz"/>
+
+            <zip  destfile = "@{stage-dir}/@{base-file}.zip">
+                <zipfileset  dir = "@{dir}"  prefix = "@{base-dir}"/>
+            </zip>
+
+            <post-processing/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Replaces all ftp and http URL's to actual links.  So, if a file contains
+        no HTML "a" href's (meaning just inline static text), this script will
+        convert that to an actual "a" href.
+
+        @Attributes
+            @attribute: @{file} = fully qualified file name of a file containing non "a" ref URL's.
+
+    -->
+    <scriptdef
+        name        = "replace-url"
+        language    = "beanshell"
+        description = "Converts static text URL to an HTML a-href."
+        uri         = "http://keros.sourceforge.net" >
+
+        <classpath>
+            <fileset  dir = "${keros.dependency.HOME}"  includes = "*.jar"/>
+        </classpath>
+
+        <attribute  name = "file"/>
+
+        <![CDATA[
+            import java.io.File;
+            import java.io.IOException;
+            import java.io.RandomAccessFile;
+            
+            File             file = new File ( attributes.get ( "file" ) );
+            RandomAccessFile raf  = null;
+
+            try
+            {
+                raf  = new RandomAccessFile ( file, "rw" );
+                byte[] rawData = new byte [ ( int ) file.length () ];
+
+                raf.read ( rawData );
+
+                String data = new String ( rawData );
+
+                String toWrite =
+                    data.replaceAll ( "&amp;", "&" ).replaceAll ( "(https|http|ftp)://([\\w\\.?=&])*(([/\\w\\.?=&])*(/)?)?", "<a href = \"$0\">$0</a>" );
+
+                raf.seek ( 0 );
+                raf.write ( toWrite.getBytes () );
+            }
+
+            finally
+            {
+                if ( raf != null )
+                {
+                    try
+                    {
+                        raf.close ();
+                    }
+
+                    catch ( IOException closeException )
+                    {
+                        closeException.printStackTrace ();
+                    }
+                }
+            }
+        ]]>
+    </scriptdef>
+
+
+    <!--
+
+        Determines if @{dir} exists and if not, fails with @{error-msg}.
+
+        @Attributes
+            @attribute: @{dir}         = the name of the directory that should exist.
+
+            @attribute: @{error-msg}   = the message to display if @{dir} does not exist.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "assert-dir-exists"
+        description = "Determines if @{dir} exists and if not, fails with @{error-msg}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "dir"          description = "The name of the directory that should exist."/>
+        <attribute  name = "error-msg"    default = "${keros.assert-dir-exists.error-msg}"  description = "The message to display if @{dir} does not exist."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                If @{dir} does not exist, we will fail.
+
+            -->
+            <ant-contrib:if  description = "Ensure @{dir} exists - if not we fail">
+                <not>
+                    <available  file = "@{dir}"  type = "dir"/>
+                </not>
+
+                <ant-contrib:then>
+                    <fail  message = "@{dir}"/>
+                    <fail  message = "@{error-msg}"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Determines if @{file} exists and if not, fails with @{error-msg}.
+
+        @Attributes
+            @attribute: @{file}        = the file that should exist.
+
+            @attribute: @{error-msg}   = if @{dir} does not exist, the message to display.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef 
+        name        = "assert-file-exists"
+        description = "Determines if @{file} exists and if not, fails with @{error-msg}."
+        uri         = "http://keros.sourceforge.net">
+         
+        <attribute  name = "file"         description = "The name of the file that should exist."/>
+        <attribute  name = "error-msg"    default = "${keros.assert-file-exists.error-msg}"  description = "The message to display if @{file} does not exist."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                If @{file} does not exist, we will fail.
+
+            -->
+            <ant-contrib:if  description = "Ensure @{file} exists - if not we fail">
+                <not>
+                    <available  file = "@{file}"  type = "file"/>
+                </not>
+
+                <ant-contrib:then>
+                    <fail  message = "@{error-msg}"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Compute the branch based upon a root dir, @{root}, and full path, @{full-path}.  The
+        branch represents the full path minus the root dir.  Please note:  if @{root} does not
+        exist in @{full-path}, @{property} will be set with an empty value.
+
+        @Attributes
+            @attribute: @{root}        = the root of the path defined in @{full-path}.
+
+            @attribute: @{full-path}   = the absolute path for which @{root} is the root of the path and
+                                         the branch computed is this path minus the root.
+
+            @attribute: @{property}    = the property to set with the branch.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Example
+            @example: @{root}      = /foo/bar/alpha
+
+            @example: @{full-path} = /foo/bar/alpha/beta/theta/zeta
+
+        @Result
+            @result: @{property}  = beta/theta/zeta.
+
+        @Example
+            @example: @{root}      = /hello/world
+
+            @example: @{full-path} = /foo/bar/alpha/beta/theta/zeta
+
+        @Result
+            @result: @{property}  = 
+
+    -->
+    <macrodef
+        name        = "compute-branch"
+        description = "Compute the branch based upon a root dir, @{root}, and full path, @{full-path}.  The branch represents the full path minus the root dir.  Please note:  if @{root} does not exist in @{full-path}, @{property} will be set with an empty value."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "root"         description = "The root of the path defined in @{full-path}."/>
+        <attribute  name = "full-path"    description = "The absolute path for which @{root} is the root of the path and the branch computed is this path minus the root."/>
+        <attribute  name = "property"     description = "The property to set with the branch."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                Grab data past @{root} in @{full-path}.  
+
+            -->
+            <ant-contrib:propertyregex  property = "keros.compute-branch.COMPUTE_BRANCH"  override = "true"  input = "@{full-path}"  regexp = "@{root}(.*)"  select = "\1"  description = "Parse out the branch from the value contained in @{root}"/>
+
+            <!--
+
+                Remove the leading file separator (if it is there).  If it is not there,
+                simply use the value as is.
+
+            -->
+            <ant-contrib:propertyregex  property = "@{property}"  override = "true"  input = "${keros.compute-branch.COMPUTE_BRANCH}"  regexp = "^[${file.separator}](.*)"  replace = "\1" defaultValue = "${keros.compute-branch.COMPUTE_BRANCH}"  description = "Remove the leading file separator if its there"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Define setting properties using either environment variables or
+        default values.  The property entitled @{property} will not be re-set
+        if it is currently defined (set).
+
+        @Attributes
+            @attribute: @{property}    = the name of the property to set.
+
+            @attribute: @{default}     = default value to use if the property named @{property} is not set.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef  
+        name        = "auto-property"
+        description = "Define setting properties using either environment variables or default values.  The property entitled @{property} will not be re-set if it is currently defined (set)."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "property"     description = "The name of the property to set."/>
+        <attribute  name = "default"      default = ""  description = "The default value to use if the property named, @{property}, is not set."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                Make sure the property isn't currently set.
+
+            -->
+            <ant-contrib:if  description = "Check to see if @{property} has been set">
+                <not>
+                    <isset  property = "@{property}"/>
+                </not>
+
+                <ant-contrib:then>
+                    <!--
+
+                        Property not set, is it defined in the environment?
+
+                    -->
+                    <ant-contrib:if  description = "See if there is an environment property set">
+                        <isset  property = "keros.ENVIRONMENT.@{property}"/>
+
+                        <!-- 
+
+                            Property defined via the environment.
+
+                        -->
+                        <ant-contrib:then>
+                            <property  name = "@{property}"  value = "${keros.ENVIRONMENT.@{property}}"  description = "Set the property from the environment's value"/>
+                        </ant-contrib:then>
+
+                        <!--
+
+                            Property not defined in the environment - use the default.
+
+                        -->
+                        <ant-contrib:else>
+                            <property  name = "@{property}"  value = "@{default}"  description = "Set the property from the default value"/>
+                        </ant-contrib:else>
+                    </ant-contrib:if>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Forces a property to be set regardless if it currently is set.
+
+        @Attributes
+            @attribute: @{property}    = the name of the property to set.
+
+            @attribute: @{value}       = the value to set the property to set.
+
+            @attribute: @{is-warnable} = a flag, if true states a warning should be displayed - anything else no warning is outputted.
+
+            @attribute: @{warning-msg} = if set to anything and the property named, property, is set, will
+                                         echo the value of this param.  Please note, the property will
+                                         still be set.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef  
+        name        = "set-property"
+        description = "This will set a property whether its set or not."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "property"     description = "The name of the property to set."/>
+        <attribute  name = "value"        description = "The value to set the property to set."/>
+        <attribute  name = "is-warnable"  default = "true"  description = "A flag, if true states a warning should be displayed - anything else no warning is outputted."/>
+        <attribute  name = "warning-msg"  default = "${keros.set-property.warning-msg}"  description = "if set to anything and the property named, property, is set, will echo the value of this param.  Please note, the property will still be set."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <echo message = "@{warning-msg}"/>
+            <!--
+
+                If the property is set -and- warning is enabled -and-
+                the property's value doesn't equal @{value} - log a warning.
+
+            -->
+            <ant-contrib:if  description = "Check to see if the property is set, warning is enable and current property doesn't equal @{value} - if so we echo a warning">
+                <and>
+                    <isset  property = "@{property}"/>
+
+                    <equals  arg1 = "@{is-warnable}"  arg2 = "true"  casesensitive = "false"/>
+
+                    <not>
+                        <equals  arg1 = "${@{property}}"  arg2 = "@{value}"/>
+                    </not>
+                </and>
+
+                <ant-contrib:then>
+                    <echo  message = "@{warning-msg}"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+
+            <ant-contrib:var  name = "@{property}"  value = "@{value}"  description = "Set the property to @{value}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Sets a value for a property named @{name}.  If @{property} is set, then the
+        value of @{set} is used, otherwise the value of @{unset} is used.
+
+        @Attributes
+            @attribute: @{name}        = the name of the property to set.
+
+            @attribute: @{property}    = the name of the property to examine to see if set.
+
+            @attribute: @{set}         = the value to use if @{property} is set.
+
+            @attribute: @{unset}       = the value to use if @{property} is not set.
+
+            @attribute: @{is-warnable} = a flag, if true implies a warning should be displayed (if @{property}
+                                         is currently set), or false no warning message.
+
+            @attribute: @{warning-msg} = if set to anything and the property named, name, is set, will
+                                         echo the value of this param.  Please note, the property will
+                                         still be set.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef  
+        name        = "conditional-set-property"
+        description = "This will conditionally set a property whether.  If @{property} is set it will use @{set} otherwise @{unset}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "name"         description = "The name of the property to set."/>
+        <attribute  name = "property"     description = "The name of the property to examine to see if set."/>
+        <attribute  name = "set"          description = "The value to use if @{property} is set."/>
+        <attribute  name = "unset"        description = "The value to use if @{property} is not set."/>
+        <attribute  name = "is-warnable"  default = "true"  description = "A flag, if true states a warning should be displayed - anything else no warning is outputted."/>
+        <attribute  name = "warning-msg"  default = "${keros.conditional-set-property.warning-msg}"  description = "if set to anything and the property named, name, is set, will echo the value of this param.  Please note, the property will still be set."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                If the property is set, 
+
+            -->
+            <ant-contrib:if  description = "Set the property @{name} if @{property} is set">
+                <isset  property = "@{property}"/>
+
+                <ant-contrib:then>
+                    <keros:set-property  property = "@{name}"  value = "@{set}"  is-warnable = "@{is-warnable}"  warning-msg = "@{warning-msg} [@{set}]"/>
+                </ant-contrib:then>
+
+                <ant-contrib:else>
+                    <keros:set-property  property = "@{name}"  value = "@{unset}"  is-warnable = "@{is-warnable}"  warning-msg = "@{warning-msg} [@{unset}]"/>
+                </ant-contrib:else>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Sets the value of the property entitled @{name} based upon a comparison to the value contained
+        by the property ${property}.  If @{property} equals @{value}, @{name} will be set to @{equal},
+        otherwise it will be set to @{unequal}.
+
+        @Attributes
+            @attribute: @{name}        = the name of the property to set.
+
+            @attribute: @{property}    = the name of the property to examine to see if set.
+
+            @attribute: @{value}       = the value to compare @{property} to.
+
+            @attribute: @{equal}       = the value to use if @{property} equals @{value}.
+
+            @attribute: @{unequal}     = the value to use if @{property} is not equal to @{value}.
+
+            @attribute: @{is-warnable} = a flag, if true states a warning should be displayed - anything
+                                         else no warning is outputted.
+
+            @attribute: @{warning-msg} = The message to emit if @{name} is currently set.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef  
+        name        = "equality-set-property"
+        description = "This will set the value of the property entitled @{name} based upon a comparison to the value contained by the property ${property}.  If @{property} equals @{value}, @{name} will be set to @{equal}, otherwise it will be set to @{unequal}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "name"         description = "The name of the property to set."/>
+        <attribute  name = "property"     description = "The name of the property to examine for equality/inequality."/>
+        <attribute  name = "value"        description = "The value to compare against @{property}."/>
+        <attribute  name = "equal"        description = "the value to use if @{property} equals @{value}."/>
+        <attribute  name = "unequal"      description = "The value to use if @{property} not equal to @{value}."/>
+        <attribute  name = "is-warnable"  default = "true"  description = "A flag, if true states a warning should be displayed - anything else no warning is outputted."/>
+        <attribute  name = "warning-msg"  default = "${keros.equality-set-property.warning-msg}"  description = "The message to emit if @{name} is currently set."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                If the property is set, 
+
+            -->
+            <ant-contrib:if  description = "Set the property @{name} if @{property} = @{value}">
+                <equals  arg1 = "${@{property}}"  arg2 = "@{value}"/>
+
+                <ant-contrib:then>
+                    <keros:set-property  property = "@{name}"  value = "@{equal}"  is-warnable = "@{is-warnable}"  warning-msg = "@{warning-msg}"/>
+                </ant-contrib:then>
+
+                <ant-contrib:else>
+                    <keros:set-property  property = "@{name}"  value = "@{unequal}"  is-warnable = "@{is-warnable}"  warning-msg = "@{warning-msg}"/>
+                </ant-contrib:else>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        This implements a for loop with starting and ending values for the loop.
+
+        @Attributes
+            @attribute: @{property}    = the name of the property that will contain the current value of the loop.
+
+            @attribute: @{start}       = the start value of the loop.
+
+            @attribute: @{end}         = the end value of the loop.
+
+            @attribute: @{inc}         = value to increment (or decrement) while looping.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Elements
+            @element: @{loop}  = the children will be executed for each iteration of the loop.
+
+    -->
+    <macrodef
+        name        = "for"
+        description = "This implements a for loop with starting and ending values for the loop."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "property"     description = "The name of the property that will contain the current value of the loop."/>
+        <attribute  name = "start"        default = "1"  description = "The start value of the loop."/>
+        <attribute  name = "end"          description = "The end value of the loop"/>
+        <attribute  name = "inc"          default = "1"  description = "The value to increment (or decrement) when looping."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <element  name = "loop"  implicit = "true" description = "The enclosing block - just like ant contrib's for/sequential."/>
+
+        <sequential>
+            <!--
+
+                Make sure we were given numbers to loop with.
+
+            -->
+            <keros:assert-is-number  number = "@{start}"/>
+            <keros:assert-is-number  number = "@{end}"/>
+            <keros:assert-is-number  number = "@{inc}"/>
+
+            <ant-contrib:var  name = "@{property}"  value = "@{start}"  description = "Store the start value in @{property}"/>
+
+            <ant-contrib:if  description = "Check that the value of @{property} != @{end}">
+                <not>
+                    <equals  arg1 = "${@{property}}"  arg2 = "@{end}"/>
+                </not>
+
+                <ant-contrib:then>
+                    <loop/>
+
+                    <ant-contrib:math  result = "@{property}"  datatype = "int" operation = "+"  operand1 = "${@{property}}"  operand2 = "@{inc}"  description = "Add the increment to @{property}"/>
+
+                    <keros:for  property = "@{property}"  start = "${@{property}}" end = "@{end}"  inc = "@{inc}">
+                        <loop/>
+                    </keros:for>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+    
+
+    <!--
+
+        This will copy the directory @{src-dir} to @{dest-dir}.
+        Please note:  if @{dest-dir} does not exist, it will be created.
+
+        @Attributes
+            @attribute: @{src-dir}     = the directory to copy.
+
+            @attribute: @{dest-dir}    = the directory to copy files to.
+
+            @attribute: @{error-msg}   = the error message to display if @{src-dir} does not exist.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "copy-dir"
+        description = "This will copy the contents of a directory from @{src-dir} to @{dest-dir}.  Please note:  if @{dest-dir} does not exist, it will be created."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "src-dir"      description = "The source dir copy from."/>
+        <attribute  name = "dest-dir"     description = "The directory to copy to."/>
+        <attribute  name = "error-msg"    default = "${keros.copy-dir-set-property.error-msg}"  description = "Error message to display if @{src-dir} does not exist."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                Make sure @{src-dir} exists.
+
+            -->
+            <ant-contrib:if  description = "Copy the directory @{src-dir} if it exists">
+                <available  file = "@{src-dir}"  type = "dir"/>
+
+                <ant-contrib:then>
+                    <mkdir  dir = "@{dest-dir}"/>
+
+                    <keros:dirname   file = "@{src-dir}"  property = "keros.copy-dir.DIR_NAME"/>
+                    <keros:basename  file = "@{src-dir}"  property = "keros.copy-dir.BASE_NAME"/>
+
+                    <copy  todir = "@{dest-dir}"  overwrite = "true">
+                        <fileset  dir = "${keros.copy-dir.DIR_NAME}"  includes = "${keros.copy-dir.BASE_NAME}/**"/>
+                    </copy>
+                </ant-contrib:then>
+
+                <ant-contrib:else>
+                    <fail  message = "@{error-msg}"/>
+                </ant-contrib:else>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        This will copy from @{src-ref-id} to @{dest-dir}.
+        Please note:  if @{dest-dir} does not exist, it will be created.
+
+        @Attributes
+            @attribute: @{src-ref-id}  = the source ref id to copy from.
+
+            @attribute: @{dest-dir}    = the directory to copy files to.
+
+            @attribute: @{error-msg}   = the error message to display if @{src-ref-id} is not a ref-id.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "copy-ref-id"
+        description = "This will copy from @{src-ref-id} to @{dest-dir}.  Please note:  if @{dest-dir} does not exist, it will be created."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "src-ref-id"   description = "The source to copy from - be it a file, dir or ref id."/>
+        <attribute  name = "dest-dir"     description = "The directory to copy to."/>
+        <attribute  name = "error-msg"    default = "${keros.copy-ref-id.error-msg}"  description = "Error message to display if @{src-ref-id} is not a ref id."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+              -
+              - Are we copying a ref id?
+              -
+              -->
+            <ant-contrib:if  description = "Copy the references contained in @{src-ref-id} if it is a path reference">
+                <isreference  refid = "@{src-ref-id}"  type = "path"/>
+                
+                <ant-contrib:then>
+                    <ant-contrib:for  param = "dir"  description = "Loop over all references found in @{src-ref-id}">
+                        <path>
+                            <path  refid = "@{src-ref-id}"/>
+                        </path>
+
+                        <sequential>
+                            <keros:copy  src = "@{dir}"  dest-dir = "@{dest-dir}"/>
+                        </sequential>
+                    </ant-contrib:for>
+
+                </ant-contrib:then>
+
+                <ant-contrib:else>
+                    <fail  message = "@{error-msg}"/>
+                </ant-contrib:else>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        This will copy from @{src} to @{dest-dir}.
+
+        If @{src} represents:
+            <ul>
+                <li>
+                    a file, the file will be copied.
+                </li>
+                
+                <li>
+                    a directory, the directory's contents will be copied.
+                </li>
+
+                <li>
+                    a path ref, the contents of each element will be copied 
+                    (meaning a file will copy the file, a directory will copy
+                    the contents of the directory, etc).
+                </li>
+            </ul>
+
+            Please note:  if @{dest-dir} does not exist, it will be created.
+
+        @Attributes
+            @attribute: @{src}         = the source to copy from - be it a file dir or ref id.
+
+            @attribute: @{dest-dir}    = the directory to copy files to.
+
+            @attribute: @{error-msg}   = the error message to display if @{src} does not exist or
+                                         is not a file, dir or ref id.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "copy"
+        description = "This will copy from @{src} to @{dest-dir}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "src"          description = "The source to copy from - be it a file, dir or ref id."/>
+        <attribute  name = "dest-dir"     description = "The directory to copy to."/>
+        <attribute  name = "error-msg"    default = "${keros.copy.error-msg}"  description = "Error message to display if @{src} does not exist or is not a file, dir or ref id."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <mkdir  dir = "@{dest-dir}"/>
+
+            <!--
+
+                Are we copying a file?
+
+            -->
+            <ant-contrib:if  description = "Copy @{src} if it is a file">
+                <available  file = "@{src}"  type = "file"/>
+
+                <ant-contrib:then>
+                    <copy  file = "@{src}"  todir = "@{dest-dir}"/>
+                </ant-contrib:then>
+
+                <!--
+
+                    Are we copying a directory?
+
+                -->
+                <ant-contrib:elseif  description = "Copy @{src} as a directory if it is a directory">
+                    <available  file = "@{src}"  type = "dir"/>
+
+                    <ant-contrib:then>
+                        <keros:copy-dir  src-dir = "@{src}"  dest-dir = "@{dest-dir}"/>
+                    </ant-contrib:then>
+                </ant-contrib:elseif>
+
+                <!--
+
+                    Are we copying a ref id?
+
+                -->
+                <ant-contrib:elseif  description = "Copy @{src} as a path if it is a path">
+                    <isreference  refid = "@{src}"  type = "path"/>
+                    
+                    <ant-contrib:then>
+                        <keros:copy-ref-id  src-ref-id = "@{src}"  dest-dir = "@{dest-dir}"/>
+                    </ant-contrib:then>
+                </ant-contrib:elseif>
+
+                <ant-contrib:else>
+                    <echo  message = "@{error-msg}"/>
+                </ant-contrib:else>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        This will load a file into a property.  If @{property} was already set,
+        it will be overridden.
+
+        @Attributes
+            @attribute: @{src-file}    = the location of the file to load and store in @{property}.
+
+            @attribute: @{property}    = the property to hold @{src-file}.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "load-file"
+        description = "This will load a file into a property.  If @{property} was already set, it will be overridden."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "src-file"     description = "The location of the file to load and store in @{property}."/>
+        <attribute  name = "property"     description = "The property to hold @{src-file}."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!-- 
+
+                This will allow us to load a file into the same property over
+                and over if needed.
+
+            -->
+            <ant-contrib:var  name = "@{property}"  unset = "true"  description = "Reset @{property} so we can store the file's contents"/>
+            <loadfile  property = "@{property}"  srcFile = "@{src-file}"/>
+        </sequential>
+    </macrodef>
+    
+
+	<!--
+
+        Will prompt for input if property not set (or if the @{always} attribute is true).  If @{always} is true
+        and @{property} is set and @{default} is empty, the value of @{property} becomes the @{default} value.
+        If the attribute @{required} is true and no value is set for @{property}, this macro will cause a fail
+        to be invoked.  Please note that if @{default} is set and input is prompted but the user does not enter
+        anything, the value of @{default} will be used to set the property!
+
+        @Attributes
+            @attribute: @{prompt}      = when requesting input, the message to display.
+
+            @attribute: @{property}    = the property to set.
+
+            @attribute: @{default}     = the default value to use if upon input, nothing entered.
+
+            @attribute: @{always}      = if true will prompt for input regardless if property has been set.
+
+            @attribute: @{required}    = if true, after input the property must be set or failure will occur.
+
+            @attribute: @{error-msg}   = if @{property} is required and no value set, the error message to display.
+
+            @attribute: @{description} = information about calling this macro.
+
+	-->
+    <macrodef
+        name        = "console-input"
+        description = "Will prompt for input if property not set (or if the @{always} attribute is true).  If @{always} is true and @{property} is set and @{default} is empty, the value of @{property} becomes the @{default} value.  If the attribute @{required} is true and no value is set for @{property}, this macro will cause a fail to be invoked.  Please note that if @{default} is set and input is prompted but the user does not enter anything, the value of @{default} will be used to set the property!"
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "prompt"       description = "When requesting input, the message to display."/>
+        <attribute  name = "property"     description = "The property to set."/>
+        <attribute  name = "default"      default = ""       description = "The default value to use if upon input, nothing entered."/>
+        <attribute  name = "always"       default = "false"  description = "If true will prompt for input regardless if property has been set."/>
+        <attribute  name = "required"     default = "true"   description = "If true, after input the property must be set or failure will occur."/>
+        <attribute  name = "error-msg"    default = "${keros.console-input.error-msg}"  description = "If @{property} is required and no value set, the error message to display."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                Checking to see if the property is not set, or do we always prompt for input.
+                It is possible the property is set, but we always want to prompt regardless.
+
+            -->
+            <ant-contrib:if  description = "Check to see if @{property} is set and we are to prompt">
+                <or>
+                    <not>
+                        <isset  property = "@{property}"/>
+                    </not>
+
+                    <equals  arg1 = "@{always}" arg2 = "true"/>
+                </or>
+
+                <ant-contrib:then>
+                    <!--
+
+                        Default values...
+
+                    -->
+                    <ant-contrib:var  name = "keros.console-input.PROMPT_MSG"     value = "@{prompt}:"  description = "Set the prompt message"/>
+                    <ant-contrib:var  name = "keros.console-input.DEFAULT_VALUE"  value = "@{default}"  description = "Set the default value if enter pressed"/>
+
+                    <!--
+
+                        See if the property was set and no default value supplied.
+                        If so, use the value of the property.
+
+                    -->
+                    <ant-contrib:if  description = "Check if @{property} is set but there is no default value, compute one">
+                        <and>
+                            <isset  property = "@{property}"/>
+
+                            <equals  arg1 = "@{default}"  arg2 = ""/>
+                        </and>
+
+                        <then>
+                            <var  name = "keros.console-input.DEFAULT_VALUE"  value = "${@{property}}"/>
+                        </then>
+                    </ant-contrib:if>
+
+                    <!--
+
+                        Compute prompt...
+
+                    -->
+                    <ant-contrib:if  description = "If no default value, we will compute one">
+                        <not>
+                            <equals  arg1 = "${keros.console-input.DEFAULT_VALUE}"  arg2 = ""/>
+                        </not>
+
+                        <ant-contrib:then>
+                            <var  name = "keros.console-input.PROMPT_MSG" value = "@{prompt}(${keros.console-input.DEFAULT_VALUE}):  "  description = "Define the prompt message"/>
+                        </ant-contrib:then>
+                    </ant-contrib:if>
+
+                    <!--
+
+                        Reset property as it may be set.
+
+                    -->
+                    <ant-contrib:var  name = "@{property}" unset = "true"  description = "Reset @{property} so it can be set upon input"/>
+
+                    <!--
+
+                        Prompt user for data...
+
+                    -->
+                    <input  message = "${keros.console-input.PROMPT_MSG}"  addproperty = "@{property}"  defaultvalue = "${keros.console-input.DEFAULT_VALUE}"/>
+
+                    <!--
+
+                        Will fail if property is not set (meaning either not set or empty) AND required.  It could be that an empty value is
+                        acceptable...
+
+                    -->
+                    <ant-contrib:if  description = "If a value is required and no data was entered, fail with @{error-msg}">
+                        <equals  arg1 = "@{required}"  arg2 = "true"  casesensitive = "false"/>
+
+                        <ant-contrib:then>
+                            <keros:assert-property-set  property = "@{property}"  error-msg = "@{error-msg}"/>
+                        </ant-contrib:then>
+                    </ant-contrib:if>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+	</macrodef>
+
+
+	<!--
+
+        Execute a java class whose class name is @{class-property}.  If this property
+        is not set, the user will be prompted for the class name.
+
+        @Attributes
+
+            @attribute: class-property   = the name of the property who has the fully qualified class name to execute.
+
+            @attribute: class-path-ref   = the class path for executing the java app.
+
+            @attribute: args-property    = the name of the property who has the arguments to pass to the class.
+
+            @attribute: class-prompt-msg = the message to use if the property defined by class-property name has not been set.
+
+            @attribute: args-prompt-msg  = the message to use if the property defined by args-property name has not been set.
+
+            @attribute: @{description}   = information about calling this macro.
+
+	-->
+    <macrodef
+        name        = "execute-java-app"
+        description = "Execute a java class whose class name is @{class-property}.  If this property is not set, the user will be prompted for the class name."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "class-property"    description = "The name of the property who has the fully qualified class name to execute."/>
+        <attribute  name = "class-path-ref"    description = "The class path for executing the java app."/>
+        <attribute  name = "args-property"     default = ""  description = "The name of the property who has the arguments to pass to the class."/>
+        <attribute  name = "class-prompt-msg"  default = "${keros.execute-java-app.class-prompt-msg}"  description = "The message to use if the property defined by class-property name has not been set."/>
+        <attribute  name = "args-prompt-msg"   default = "${keros.execute-java-app.args-prompt-msg}"   description = "The message to use if the property defined by args-property name has not been set."/>
+        <attribute  name = "description"       default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:var  name = "keros.execute-java-app.CLASS_PROPERTY_ERROR_MSG"  value = "You must provide @{property} either as a system property variable or enter as input!!!"  description = "Error message if @{property} is not set"/>
+
+            <keros:console-input  prompt = "@{class-prompt-msg}"  property = "@{class-property}"  error-msg = "${keros.execute-java-app.CLASS_PROPERTY_ERROR_MSG}"/>
+
+            <!--
+
+                If the args property was presented, we will do a prompt (if the property value for attribute
+                args-property is not set).
+
+            -->
+            <ant-contrib:if  description = "If arguments were presented, we will prompt the user for input before executing the java application">
+                <not>
+                    <equals  arg1 = "@{args-property}"  arg2 = ""/>
+                </not>
+                
+                <ant-contrib:then>
+                    <keros:console-input  prompt = "@{args-prompt-msg}"  property = "@{args-property}"  required  = "false"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+
+            <!--
+
+                Execute the java class.
+
+            -->
+            <java  classname = "${@{class-property}}">
+                <classpath  refid = "@{class-path-ref}"/>
+                <arg        line  = "${@{args-property}}"/>
+            </java>
+        </sequential>
+	</macrodef>
+
+
+    <!--
+
+         Print the contents of @{ref-id} to the console.
+
+         @Attributes
+             @attribute: @{refid}      = the name of the ref id to display.
+
+             @attribute: @{indent}     = string to use for indenting the contents of refid.
+
+             @attribute: @{error-msg}  = when printing @{ref-id}, if a directory does not exist,
+                                         an error is raised by Ant.  Instead of that error being
+                                         displayed, the value of @{error-msg} is displayed instead.
+
+            @attribute: @{description} = information about calling this macro.
+
+     -->
+    <macrodef
+        name        = "print-ref-id"
+        description = "Print the contents of @{ref-id} to the console."
+        uri         = "http://keros.sourceforge.net">
+
+
+        <attribute  name = "ref-id"       description = "The name of the ref id to display."/>
+        <attribute  name = "indent"       default = ""  description = "String to use for indenting the contents of refid."/>
+        <attribute  name = "error-msg"    default = "${keros.print-ref-id.error-msg}"  description = "When printing @{ref-id}, if a directory does not exist and ant raises an error, this value will be displayed instead."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                We have to do the try/catch here because if the @{ref-id} contains
+                a parent directory that does not exist but is using includes, attempting
+                to iterate over will cause a failure at the <for> line.
+
+            -->
+            <ant-contrib:trycatch  description = "Outputting the path...if there is an error we will recover gracefully">
+                <ant-contrib:try>
+                    <ant-contrib:for  param = "path-part"  description = "Iterate over the parts of the path for output">
+                        <path  refid = "@{ref-id}"/>
+
+                        <sequential>
+                            <echo  message = "@{indent}@{path-part}"/>
+                        </sequential>
+                    </ant-contrib:for>
+                </ant-contrib:try>
+
+                <ant-contrib:catch  description = "An error arose when outputting">
+                    <echo  message = "@{error-msg}"/>
+                </ant-contrib:catch>
+            </ant-contrib:trycatch>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Can determine if a directory exists, and act accordingly.
+
+        @Attributes
+            @attribute: @{dir}         = the to directory examine for its existance.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Elements
+            @element: @{then} = the block of code to execute if @{dir} exists.
+            
+            @element: @{else} = the block of code to execute if @{dir} does not exist.
+
+    -->
+    <macrodef
+        name        = "if-dir-exists"
+        description = "Determines if @{dir} exists and will act accordingly."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "dir"          description = "The name of the directory to check for existance."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <element  name = "then"  description = "If @{dir} exists, execute the tasks in this block."/>
+        <element  name = "else"  optional = "true"  description = "If @{dir} directory does not exist, execute the tasks in this block."/>
+
+        <sequential>
+            <!--
+
+                If @{dir} does exist, execute the then block.
+
+            -->
+            <ant-contrib:if  description = "If @{dir} is a dir, execute against the contents of the then element, otherwise execute the contents of the else element">
+                <available  file = "@{dir}"  type = "dir"/>
+
+                <ant-contrib:then>
+                    <then/>
+                </ant-contrib:then>
+
+                <ant-contrib:else>
+                    <else/>
+                </ant-contrib:else>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Can determine if a file exists, and act accordingly.
+
+        @Attributes
+            @attribute: @{file}        = the to file examine for its existance.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Elements
+            @element: @{then} = the block of code to execute if @{file} exists.
+            
+            @element: @{else} = the block of code to execute if @{file} does not exist.
+
+    -->
+    <macrodef
+        name        = "if-file-exists"
+        description = "Determines if @{file} exists and will act accordingly."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "file"         description = "The name of the file that should exist."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <element  name = "then"  description = "If @{file} exists, execute the tasks in this block."/>
+        <element  name = "else"  optional = "true"  description = "If @{file} does not exist, execute the tasks in this block."/>
+
+        <sequential>
+            <!--
+
+                If @{file} exists , execute the then block.
+
+            -->
+            <ant-contrib:if  description = "If @{file} is a file, execute the contents of the then element - otherwise execute the contents of the else element">
+                <available  file = "@{file}"  type = "file"/>
+
+                <ant-contrib:then>
+                    <then/>
+                </ant-contrib:then>
+
+                <ant-contrib:else>
+                    <else/>
+                </ant-contrib:else>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Same as Ant's stock dirname task - however, this allows the property to be reset.
+
+        @Attributes
+            @attribute: @{file}        = the path to take the dirname of.
+
+            @attribute: @{property}    = the name of the property to set.
+
+            @attribute: @{prepend}     = information to prepend to property's value.
+
+            @attribute: @{append}      = information to append to property's value.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "dirname"
+        description = "Same as Ant's stock dirname task - however, this allows the property to be reset."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "file"         description = "The path to take the directory name of."/>
+        <attribute  name = "property"     description = "The name of the property to set."/>
+        <attribute  name = "prepend"      default = ""  description = "Information to prepend to property's value."/>
+        <attribute  name = "append"       default = ""  description = "Information to append to property's value."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:var  name = "@{property}"  unset = "true"  description = "Resetting @{property} so the basename can be stored there - on case its already set"/>
+
+            <dirname  property = "@{property}"  file = "@{file}"/>
+
+            <ant-contrib:var  name = "@{property}"  value = "@{prepend}${@{property}}"  description = "Prepend @{prepend} to @{property}"/>
+
+            <ant-contrib:var  name = "@{property}"  value = "${@{property}}@{append}"  description = "Append @{append} to @{property}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Same as Ant's stock basename task - however, this allows the property to be reset.
+
+        @Attributes
+            @attribute: @{file}        = the path to take the basename of.
+
+            @attribute: @{property}    = the name of the property to set.
+
+            @attribute: @{suffix}      = the suffix to remove from the resulting basename (specified either with or without the ".").
+
+            @attribute: @{prepend}     = information to prepend to property's value.
+
+            @attribute: @{append}      = information to append to property's value.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <scriptdef
+        name        = "basename"
+        language    = "beanshell"
+        uri         = "http://keros.sourceforge.net" >
+
+        <classpath>
+            <fileset  dir = "${keros.dependency.HOME}"  includes = "*.jar"/>
+        </classpath>
+
+        <attribute  name = "file"/>
+        <attribute  name = "property"/>
+        <attribute  name = "suffix"/>
+        <attribute  name = "prepend"/>
+        <attribute  name = "append"/>
+        <attribute  name = "description"/>
+
+        <![CDATA[
+            import java.io.File;
+
+            File file = new File ( attributes.get ( "file" ) );
+
+            String fileName = file.getName ();
+            String propertyValue;
+
+            if ( null != fileName && ! "".equals ( fileName ) )
+            {
+                StringBuilder sb = new StringBuilder ();
+
+                String prepend = attributes.get ( "prepend" );
+                if ( null != prepend && ! "".equals ( prepend ) )
+                {
+                    sb.append ( prepend );
+                }
+
+                String suffix = attributes.get ( "suffix" );
+                if ( null != suffix && ! "".equals ( suffix ) && null != fileName && fileName.endsWith ( suffix ) )
+                {
+                    sb.append ( fileName.substring ( 0, fileName.length () - suffix.length () ) );
+                }
+                else
+                {
+                    sb.append ( fileName );
+                }
+
+                String append = attributes.get ( "append" );
+                if ( null != append && ! "".equals ( append ) )
+                {
+                    sb.append ( append );
+                }
+
+                propertyValue = sb.toString ();
+            }
+            else
+            {
+                propertyValue = "";
+            }
+
+            project.setProperty ( attributes.get ( "property" ), propertyValue );
+        ]]>
+    </scriptdef>
+
+
+    <!--
+
+        Same as Ant's stock basename task - however, this allows the property to be reset.
+
+        @Attributes
+            @attribute: @{file}        = the path to take the basename of.
+
+            @attribute: @{property}    = the name of the property to set.
+
+            @attribute: @{suffix}      = the suffix to remove from the resulting basename (specified either with or without the ".").
+
+            @attribute: @{prepend}     = information to prepend to property's value.
+
+            @attribute: @{append}      = information to append to property's value.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "base-name"
+        description = "Same as Ant's stock basename task - however, this allows the property to be reset."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "file"         description = "The path to take the basename of."/>
+        <attribute  name = "property"     description = "The name of the property to set."/>
+        <attribute  name = "suffix"       default = ""  description = "The suffix to remove from the resulting basename (specified either with or without the .)."/>
+        <attribute  name = "prepend"      default = ""  description = "Information to prepend to property's value."/>
+        <attribute  name = "append"       default = ""  description = "Information to append to property's value."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:var  name = "@{property}"  unset = "true"  description = "Resetting @{property} so the basename can be stored there - on case its already set"/>
+
+            <basename  property = "@{property}"  file = "@{file}"  suffix = "@{suffix}"/>
+
+            <ant-contrib:var  name = "@{property}"  value = "@{prepend}${@{property}}"  description = "Prepend @{prepend} to @{property}"/>
+
+            <ant-contrib:var  name = "@{property}"  value = "${@{property}}@{append}"  description = "Append @{append} to @{property}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Compute the extension of a file and store in @{property}.
+
+        @Attributes
+            @attribute: @{file}        = the name of the file for whom we wish to compute the extension.
+
+            @attribute: @{property}    = the name of the property to set.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "compute-file-extension"
+        description = "Computes the extension of @{file}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "file"         description = "The name of the file for whom we wish to compute the extension."/>
+        <attribute  name = "property"     description = "The name of the property to set."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:var  name = "keros.compute-file-extension.@{property}"  unset = "true"  description = "Used to compute the file extension"/>
+
+            <ant-contrib:propertyregex  property = "keros.compute-file-extension.@{property}"  input = "@{file}"  regexp = "(.*)\.(.*)"  select = "\2"/>
+
+            <keros:conditional-set-property  name = "@{property}"  property = "keros.compute-file-extension.@{property}"  set = "${keros.compute-file-extension.@{property}}"  unset = ""  is-warnable = "false"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+    Truncates the file extension from @{file}.
+
+        @Attributes
+            @attribute: @{file}        = the name of the file whose extension will be truncated.
+
+            @attribute: @{property}    = the name of the property to set.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "truncate-file-extension"
+        description = "Truncates the extension of @{file}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "file"         description = "The name of the file for whom we wish to truncate the extension."/>
+        <attribute  name = "property"     description = "The name of the property to set."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:var  name = "keros.truncate-file-extension.@{property}"  unset = "true"  description = "Used to compute the truncated file extension"/>
+
+            <ant-contrib:propertyregex  property = "keros.truncate-file-extension.@{property}"  override = "true"  input = "@{file}"  regexp = "(.*)\.(.*)"  select = "\1"/>
+
+            <keros:conditional-set-property  name = "@{property}"  property = "keros.truncate-file-extension.@{property}"  set = "${keros.truncate-file-extension.@{property}}"  unset = "@{file}"  is-warnable = "false"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Deletes @{file} if @{is-deletable} is yes or true.
+
+        @Attributes
+            @attribute: @{file}         = the file to be deleted.
+
+            @attribute: @{is-deletable} = flag, if true/yes (case insensitive) @{file} will be deleted.
+
+            @attribute: @{description}   = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "delete-file"
+        description = "Deletes @{file} if @{is-deletable} is yes or true."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "file"          description = "A file to delete if @{is-deletable} is true or yes."/>
+        <attribute  name = "is-deletable"  default = "true"  description = "If yes or true, @{file} will be removed."/>
+        <attribute  name = "description"   default = ""      description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:if>
+                <or>
+                    <equals  arg1 = "@{is-deletable}"  arg2 = "true"  casesensitive = "false"/>
+                    <equals  arg1 = "@{is-deletable}"  arg2 = "yes"   casesensitive = "false"/>
+                </or>
+
+                <ant-contrib:then>
+                    <delete  file = "@{file}"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Unpacks tar files.
+
+        @Attributes
+            @attribute: @{tar-file}    = the file to untar.
+
+            @attribute: @{untar-dir}   = the directory where @{tar-file}'s file will be untar'd.
+
+            @attribute: @{clean-up}    = if yes or true (case insensitive) will remove the tar file.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "unpack-tar"
+        description = "Will untar tar files"
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "tar-file"     description = "The tar file to unpack."/>
+        <attribute  name = "untar-dir"    description = "The directory where @{tar-file} will be untar'd."/>
+        <attribute  name = "clean-up"     default = "true"  description = "If yes or true, the tar file will be removed."/>
+        <attribute  name = "description"  default = ""      description = "Information about this macro call."/>
+
+        <sequential>
+            <mkdir  dir = "@{untar-dir}"/>
+            <untar  src = "@{tar-file}"  dest = "@{untar-dir}"/>
+            <keros:delete-file  file = "@{tar-file}"  is-deletable = "@{clean-up}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Unpacks tar.bz2 files.
+
+        @Attributes
+            @attribute: @{bz2-file}    = the file to unpack.
+
+            @attribute: @{bunzip-dir}  = the directory where @{bz2-file} will be unpacked containing as a tar file.
+
+            @attribute: @{untar-dir}   = the directory where @{bz2-file}'s tar file will be unpacked.
+
+            @attribute: @{clean-up}    = if yes or true (case insensitive) will remove the gz and tar file.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "unpack-bz2"
+        description = "Will bunzip2/untar tar.bz2 files"
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "bz2-file"     description = "The bz2 file to unpack."/>
+        <attribute  name = "bunzip-dir"   default = "${keros.tar.HOME}"  description = "The directory where @{bz2-file} will be unpacked containing as a tar file."/>
+        <attribute  name = "untar-dir"    description = "The directory where @{bz2-file}'s tar file will be unpacked."/>
+        <attribute  name = "clean-up"     default = "true"  description = "If yes or true, the tar file will be removed."/>
+        <attribute  name = "description"  default = ""      description = "Information about this macro call."/>
+
+        <sequential>
+            <keros:basename  file = "@{bz2-file}"  property = "keros.unpack-bz2.TAR_FILE_NAME"  suffix = ".bz2"/>
+
+            <mkdir  dir = "@{bunzip-dir}"/>
+            <bunzip2  src = "@{bz2-file}"  dest = "@{bunzip-dir}"/>
+
+            <keros:unpack-tar  tar-file = "@{bunzip-dir}/${keros.unpack-bz2.TAR_FILE_NAME}"  untar-dir = "@{untar-dir}"  clean-up = "@{clean-up}"/>
+            <keros:delete-file  file = "@{bunzip-dir}/${keros.unpack-bz2.TAR_FILE_NAME}"  is-deletable = "@{clean-up}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Unpacks tar.gz files.
+
+        @Attributes
+            @attribute: @{gz-file}     = the file to unpack.
+
+            @attribute: @{gunzip-dir}  = the directory where @{gz-file} will be unpacked containing as a tar file.
+
+            @attribute: @{untar-dir}   = the directory where @{gz-file}'s tar file will be unpacked.
+
+            @attribute: @{clean-up}    = if yes or true (case insensitive) will remove the bz2 and tar file.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "unpack-gz"
+        description = "Will gunzipz/untar tar.gz files"
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "gz-file"      description = "The gz file to unpack."/>
+        <attribute  name = "gunzip-dir"   default = "${keros.tar.HOME}"  description = "The directory where @{gz-file} will be unpacked containing as a tar file."/>
+        <attribute  name = "untar-dir"    description = "The directory where @{gz-file}'s tar file will be unpacked."/>
+        <attribute  name = "clean-up"     default = "true"  description = "If yes or true, the tar file will be removed."/>
+        <attribute  name = "description"  default = ""      description = "Information about this macro call."/>
+
+        <sequential>
+            <keros:basename  file = "@{gz-file}"  property = "keros.unpack-gz.TAR_FILE_NAME"  suffix = ".gz"/>
+
+            <mkdir  dir = "@{gunzip-dir}"/>
+            <gunzip  src = "@{gz-file}"  dest = "@{gunzip-dir}"/>
+
+            <keros:unpack-tar  tar-file = "@{gunzip-dir}/${keros.unpack-gz.TAR_FILE_NAME}"  untar-dir = "@{untar-dir}"  clean-up = "@{clean-up}"/>
+
+            <keros:delete-file  file = "@{gunzip-dir}/${keros.unpack-gz.TAR_FILE_NAME}"  is-deletable = "@{clean-up}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Unpacks zip files.
+
+        @Attributes
+            @attribute: @{zip-file}    = the file to unpack.
+
+            @attribute: @{unzip-dir}   = the directory where @{zip-file} will be unpacked.
+
+            @attribute: @{clean-up}    = if yes or true (case insensitive) will remove the zip file.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "unpack-zip"
+        description = "Will gunzipz/untar tar.gz files"
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "zip-file"     description = "The zip file to unpack."/>
+        <attribute  name = "unzip-dir"    description = "The directory where @{gz-file} will be unpacked containing as a tar file."/>
+        <attribute  name = "clean-up"     default = "true"  description = "If yes or true, the tar file will be removed."/>
+        <attribute  name = "description"  default = ""      description = "Information about this macro call."/>
+
+        <sequential>
+            <unzip  src = "@{zip-file}"  dest = "@{unzip-dir}"/>
+
+            <keros:delete-file  file = "@{zip-file}"  is-deletable = "@{clean-up}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Unpacks tar.bz2, tar.gz and zip files - all in one convenient macrodef.
+
+        @Attributes
+            @attribute: @{file}           = the file to unpack.
+
+            @attribute: @{uncompress-dir} = the directory where @{file} may uncompress before unpacking.
+
+            @attribute: @{unpack-dir}     = the directory where the unpacked file will be expanded.
+
+            @attribute: @{clean-up}       = if yes or true (case insensitive), any intermediary
+                                            files will be removed (for example tar files).
+
+            @attribute: @{description}    = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "unpack"
+        description = "Will untar tar.bz2/tar.gz files as well as unzip zip files"
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "file"            description = "The file to unpack."/>
+        <attribute  name = "uncompress-dir"  default = "${keros.tar.HOME}"  description = "Directory where @{file} may uncompress before unpacking."/>
+        <attribute  name = "unpack-dir"      description = "The root directory where directories/files contained within @{file} will be unpacked."/>
+        <attribute  name = "clean-up"        default = "true"  description = "If yes or true (case insensitive), any intermediary files will be removed (for example tar files)."/>
+        <attribute  name = "description"     default = ""      description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                Compute the file's extension so we can unpack correctly...
+
+            -->
+            <keros:compute-file-extension   file = "@{file}"  property = "keros.unpack.UNPACK_EXTENSION"/>
+
+
+            <!--
+
+                Determine file type so as to know whether to bunzip2, gunzip or unzip...
+
+            -->
+            <ant-contrib:switch  value = "${keros.unpack.UNPACK_EXTENSION}">
+                <!--
+
+                    Dealing with a bz2 file...
+
+                -->
+                <ant-contrib:case  value = "bz2">
+                    <keros:unpack-bz2  bz2-file = "@{file}"  bunzip-dir = "@{uncompress-dir}"  untar-dir = "@{unpack-dir}"  clean-up = "@{clean-up}"  description = "Unpacking a bz2 file."/>
+                </ant-contrib:case>
+
+                <!--
+
+                    Dealing with a gz file...
+
+                -->
+                <ant-contrib:case  value = "gz">
+                    <keros:unpack-gz  gz-file = "@{file}"  gunzip-dir = "@{uncompress-dir}"  untar-dir = "@{unpack-dir}"  clean-up = "@{clean-up}"  description = "Unpacking a gz file."/>
+                </ant-contrib:case>
+
+
+                <!--
+
+                    Dealing with a zip file...
+
+                -->
+                <ant-contrib:case  value = "zip">
+                    <keros:unpack-zip  zip-file = "@{file}"  unzip-dir = "@{unpack-dir}"  clean-up = "@{clean-up}"/>
+                </ant-contrib:case>
+
+
+                <!--
+
+                    Dealing with a tar file...
+
+                -->
+                <ant-contrib:case  value = "tar">
+                    <keros:unpack-tar  tar-file = "@{file}"  untar-dir = "@{unpack-dir}"  clean-up = "@{clean-up}"  description = "Unpacking a tar file."/>
+                </ant-contrib:case>
+
+
+                <!--
+
+                    Unknown files type - fail...
+
+                -->
+                <ant-contrib:default>
+                    <fail  message = "${keros.unpack.unknown-file-type-error-msg}"/>
+                </ant-contrib:default>
+            </ant-contrib:switch>
+        </sequential>
+    </macrodef>   
+
+
+    <!--
+
+        Computes the modification date of @{file} and stores in the property denoted as @{property}.
+
+        @Attributes
+            @attribute: @{file}     = the name of the file for which the modification date is desired.`
+
+            @attribute: @{property} = the name of the property to store the modification date or empty if @{file}
+                                      does not exist.
+
+    -->
+    <scriptdef
+        name        = "compute-file-modification-date"
+        language    = "beanshell"
+        description = "Store the file modification date in @{property}."
+        uri         = "http://keros.sourceforge.net" >
+
+        <classpath>
+            <fileset  dir = "${keros.dependency.HOME}"  includes = "*.jar"/>
+        </classpath>
+
+        <attribute  name = "file"/>
+        <attribute  name = "property"/>
+        <attribute  name = "format"/>
+
+        <![CDATA[
+            import java.io.File;
+
+            import java.text.SimpleDateFormat;
+
+
+            File file = new File ( attributes.get ( "file" ) );
+
+            String fileValue;
+
+            if ( file.exists () )
+            {
+                String format = attributes.get ( "format" );
+
+                SimpleDateFormat simpleDateFormat;
+
+                if ( format != null )
+                {
+                    simpleDateFormat = new SimpleDateFormat ( format );
+                }
+                else
+                {
+                    simpleDateFormat = new SimpleDateFormat ();
+                }
+
+                fileValue = simpleDateFormat.format ( new java.util.Date ( file.lastModified () ) );
+            }
+            else
+            {
+                fileValue = "";
+            }
+
+            project.setProperty ( attributes.get ( "property" ), fileValue );
+        ]]>
+    </scriptdef>
+
+
+    <!--
+
+        Determines if @{str1} is equal to @{str2}.  If the two are not equal,
+        message defined in @{error-msg} is displayed.
+
+        @Attributes
+            @attribute: @{str1}        = compared to @{str2}.
+
+            @attribute: @{str2}        = compared to @{str1}.
+
+            @attribute: @{error-msg}   = if @{str1} not equal to @{str2}, the message when failing will be displayed.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "assert-equal"
+        description = "Determines if @{str1} is equal to @{str2}.  If the two are not equal, message defined in @{error-msg} is displayed."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "str1"         description = "Compared to @{str2}."/>
+        <attribute  name = "str2"         description = "Compared to @{str1}."/>
+        <attribute  name = "error-msg"    default = "${keros.assert-equal.error-msg}"  description = "The message to display if @{str1} not equal to @{str2}."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                If @{str1} not equal to @{str2}
+                we will fail.
+
+            -->
+            <ant-contrib:if  description = "If @{str1} != @{str2}, fail">
+                <not>
+                    <equals  arg1 = "@{str1}"  arg2 = "@{str2}"/>
+                </not>
+
+
+                <ant-contrib:then>
+                    <fail  message = "@{error-msg}"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Determines if @{str1} is not equal to @{str2}.  If the two are equal,
+        message defined in @{error-msg} is displayed.
+
+        @Attributes
+            @attribute: @{str1}        = compared to @{str2}.
+
+            @attribute: @{str2}        = compared to @{str1}.
+
+            @attribute: @{error-msg}   = if @{str1} equal to @{str2}, the message when failing will be displayed.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "assert-not-equal"
+        description = "Determines if @{str1} is not equal to @{str2}.  If the two are equal, message defined in @{error-msg} is displayed."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "str1"         description = "Compared to @{str2}."/>
+        <attribute  name = "str2"         description = "Compared to @{str1}."/>
+        <attribute  name = "error-msg"    default = "${keros.assert-not-equal.error-msg}"  description = "The message to display if @{str1} equals @{str2}."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                If @{str1} equal to @{str2}
+                we will fail.
+
+            -->
+            <ant-contrib:if  description = "If @{str1} = @{str2}, fail">
+                <equals  arg1 = "@{str1}"  arg2 = "@{str2}"/>
+
+                <ant-contrib:then>
+                    <fail  message = "FAILING @{error-msg}"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Determines if @{number} is a number.  If @{number} is not a number,
+        @{error-msg} is displayed.
+
+        @Attributes
+            @attribute: @{number}      = used to determine if a number.
+
+            @attribute: @{error-msg}   = if @{number} is not a number, the message to be displayed.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "assert-is-number"
+        description = "Determines if @{number} is a number.  If @{number} is not a number, @{error-msg} will be displayed."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "number"       description = "Used to determine if a number or not."/>
+        <attribute  name = "error-msg"    default = "${keros.assert-is-number.error-msg}"  description = "The message to display if @{number} is not a number."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:propertyregex property = "keros.assert-is-number.ASSERT_IS_NUMBER"  input = "@{number}"  regexp = "([\s]*)([0-9]+)|(\.([0-9])+)|(([0-9])*(\.([0-9])+)?)([\s]*)"  replace = ""  defaultValue = "@{number}"  override = "true"  description = "Parse will succeed if a number is contained in @{number}"/>
+
+            <!--
+
+                If @{number} is a number, ${keros.assert-is-number.ASSERT_IS_NUMBER} should be empty.
+                If not empty, we will fail.
+
+            -->
+            <ant-contrib:if  description = "If parse failed, keros.assert-is-number.ASSERT_IS_NUMBER will be the empty string - and therefore not a number">
+                <not>
+                    <equals  arg1 = "${keros.assert-is-number.ASSERT_IS_NUMBER}"  arg2 = ""/>
+                </not>
+
+                <ant-contrib:then>
+                    <fail  message = "@{error-msg}"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Determines if @{ref-id} is a ref id and if not fails with an error
+        message defined in @{error-msg}.
+
+        @Attributes
+            @attribute: @{ref-id}      = the name of the ref id that "should" be a ref id.
+
+            @attribute: @{error-msg}   = if @{property} is not set, the message when failing will be displayed.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "assert-ref-id"
+        description = "Determines if @{ref-id} is a ref id and if not fails with an error message defined in @{error-msg}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "ref-id"       description = "The name of the ref id that should be a ref id."/>
+        <attribute  name = "error-msg"    default = "${keros.assert-ref-id.error-msg}"  description = "The message to display if @{ref-id} is not a ref id."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+                If @{ref-id} is not a ref id, we will fail.
+
+            -->
+            <ant-contrib:if  description = "Fail if @{ref-id} is not a path">
+                <not>
+                    <isreference  property = "@{ref-id}"  type = "path"/>
+                </not>
+
+                <ant-contrib:then>
+                    <fail  message = "@{error-msg}"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Trim preceeding 0's from @{number} and store in the property 
+
+        @Attributes
+            @attribute: @{property}    = the name of the property to store the results of triming preceeding 0's from @{number}.
+
+            @attribute: @{number}      = the number who will have preceeding 0's trimmed.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Example
+            @example: @{number}   = 0030006
+
+        @Result
+            @result: @{property} = 30006
+
+    -->
+    <macrodef
+        name        = "compute-number-left-trim"
+        description = "Trim preceeding 0's from @{number} and store in the property entitled @{property}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "property"     description = "The name of the property to store the results of triming preceeding 0's from @{number}."/>
+        <attribute  name = "number"       description = "The number who will have preceeding 0's trimmed."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <keros:assert-is-number  number = "@{number}"/>
+
+            <!-- 
+
+                Trim leading zeros.
+
+            -->
+            <ant-contrib:propertyregex property = "@{property}"  override = "true" input = "@{number}"       regexp = "([\s]*)([0]*)([1-9])([0-9]*)(\.[0-9]*)?([\s]*)"       select = "\3\4\5"  defaultValue = "@{number}"  description = "Parse out all whitespace to the left of @{number}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Trim postceeding 0's from @{number} after decimal and store in the property 
+        entitled @{property}.
+
+        @Attributes
+            @attribute: @{property}    = the name of the property to store the results of triming postceeding 0's from @{number}.
+
+            @attribute: @{number}      = the number who will have preceeding 0's trimmed.
+
+            @attribute: @{description} = information about calling this macro.
+
+         @Example
+             @example: @{number}   = 30006.123980192830000
+
+         @Result
+             @example: @{property} = 30006.12398019283
+
+    -->
+    <macrodef
+        name        = "compute-number-right-trim"
+        description = "Trim ppostceeding 0's from @{number} after decimal and store in the property entitled @{property}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "property"     description = "The name of the property to store the results of triming postceeing 0's from decimal point from @{number}."/>
+        <attribute  name = "number"       description = "The number who will have preceeding 0's trimmed."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <keros:assert-is-number  number = "@{number}"/>
+
+            <!-- 
+
+                 Trim trailing zeros past decimal point.
+
+            -->
+            <ant-contrib:propertyregex property = "@{property}"  override = "true" input = "@{number}"  regexp = "([\s]*)([0-9]*)(\.)(([0-9]*)([1-9]))?([0]*)?([s]*)"  select = "\2\3\4"  defaultValue = "@{number}"  description = "Trim trailing zeros past decimal point"/>
+
+             <!--
+
+                 Just in case there is a trailing decimal point but no numbers past it, we will chop it off...
+
+             -->
+             <ant-contrib:propertyregex property = "@{property}"  override = "true"  input = "${@{property}}"  regexp = "([\s]*)([0-9]+)((\.)([0-9]+))?([\s]*)"  select = "\2\3"  defaultValue = "${@{property}}"  description = "Trim trailsing decimal point if no numbers past decimal point"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Trim preceeding 0's/postceeding 0's from @{number} after decimal and store in the property 
+        entitled @{property}.
+
+        @Attributes
+            @attribute: @{property}    = the name of the property to store the results of triming postceeding 0's from @{number}.
+
+            @attribute: @{number}      = the number who will have preceeding 0's trimmed.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Example
+            @example: @{number}   = 000030006.123980192830000
+
+        @Result
+            @result: @{property} = 30006.12398019283
+
+    -->
+    <macrodef
+        name        = "compute-number-trim"
+        description = "Trim ppostceeding 0's from @{number} after decimal and store in the property entitled @{property}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "property"     description = "The name of the property to store the results of triming postceeing 0's from decimal point from @{number}."/>
+        <attribute  name = "number"       description = "The number who will have preceeding 0's trimmed."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <keros:compute-number-left-trim   property = "@{property}"  number = "@{number}"/>
+            <keros:compute-number-right-trim  property = "@{property}"  number = "${@{property}}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Compute the current time stamp in YYYY-MM-DD_HH-MM-SS
+
+        @Attributes
+            @attribute: @{property}    = the property to set with the current time stamp.
+
+            @attribute: @{prefix}      = the prefix for property when time stamp is computed and stored in @{property}.
+
+            @attribute: @{suffix}      = the suffix for property when time stamp is computed and stored in @{property}.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Example
+            @example: @{prefix}    = foo_
+
+            @example: @{suffix}    = _bar
+
+            @example: current time = February 10, 2005  11:05:30 am 
+
+        @Result
+            @result: @{property}   = foo_2005-02-10_11-05-30_bar
+
+    -->
+    <macrodef
+        name        = "compute-timestamp"
+        description = "Compute the current time stamp in YYYY-MM-DD_HH-MM-SS."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "property"     description = "The property to set with the current time stamp."/>
+        <attribute  name = "prefix"       default = ""  description = "The prefix for property when time stamp is computed and stored in @{property}."/>
+        <attribute  name = "suffix"       default = ""  description = "The suffix for property when time stamp is computed and stored in @{property}."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:var  name = "keros.compute-timestamp.COMPUTE_TIMESTAMP"  unset = "true"  description = "Reset temporary variable to store time stamp"/>
+
+            <tstamp>
+                <format  property = "keros.compute-timestamp.COMPUTE_TIMESTAMP"  pattern = "yyyy-MM-dd_HH-mm-ss"/>
+            </tstamp>
+
+            <ant-contrib:var  name = "@{property}"  value = "@{prefix}${keros.compute-timestamp.COMPUTE_TIMESTAMP}@{suffix}"  description = "Add prefix and suffix to timestamp"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Replace characters from @{str}.  The characters to be replaced are contained in
+        @{to-replace}.  The replacement characters are contained in @{replacement}.  The
+        replaced data is stored in property @{property}.  Please note:  if @{str} does not
+        contain any data in @{to-replace} the value of @{property} will be @{str}.
+
+        @Attributes
+            @attribute: @{str}         = the string containing characters to be replaced.
+
+            @attribute: @{to-replace}  = the characters to replace in @{str}.
+
+            @attribute: @{replacement} = replacement characters that will replace @{to-replace} in @{str}.
+
+            @attribute: @{property}    = the property to store the class branch information.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Example
+            @example: @{str}         = Hello World
+
+            @example: @{to-replace}  = lo Wo
+            
+            @example: @{replacement} = YES
+
+        @Result
+            @result: @{property}    = HelYESrld
+
+    -->
+    <macrodef 
+        name        = "compute-replacement"
+        description = "Replace characters from @{str}.  The characters to be replaced are contained in @{to-replace}.  The replacement characters are contained in @{replacement}.  The replaced data is stored in property @{property}.  Please note if @{str} does not contain any data in @{to-replace} the value of @{property} will be @{str}."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "str"          description = "The string containing characters to be replaced."/>
+        <attribute  name = "to-replace"   description = "The characters to replace in @{str}."/>
+        <attribute  name = "replacement"  description = "The replacement characters that will replace @{to-replace} in @{str}."/>
+        <attribute  name = "property"     description = "The name of the property to hold the replaced characters."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+                The initial replace is to escape any dots as they are used in a regex to mean
+                any character.  We need to do this in case there is actually dot(s) presented
+                for replacement - as in foo.bar.alpha and one wants to replace the dots with
+                a semi colon.  We also use a temporary property, keros.compute-replacement.REPLACE_CHARS_REGEX,
+                to hold the (if there) newly escaped dots and the original @{to-replace}
+                characters for replacement.
+            -->
+            <ant-contrib:propertyregex  property = "keros.compute-replacement.REPLACE_CHARS_REGEX"  override = "true"  input = "@{to-replace}"  regexp = "\."  replace = "\\\\."  global = "true"  defaultValue = "@{to-replace}"  description = "Escaping out dots to be \."/>
+
+            <!--
+
+                Now we can perform the actual replacement using our temp property
+                ${keros.compute-replacement.REPLACE_CHARS_REGEX}, who may have the escaped dots...
+
+            -->
+            <ant-contrib:propertyregex  property = "@{property}"  override = "true"  input = "@{str}"  regexp = "${keros.compute-replacement.REPLACE_CHARS_REGEX}"  replace = "@{replacement}"  global = "true"  defaultValue = "@{str}"  description = "Do actual replacement"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        This implements a simplistic switch/case for comparing two numbers - less than,
+        greater than or equal to.  Execution will occur based on the comparison.  For
+        instance, if the two args are equal and an equal child element is defined, execution
+        will happen for that block.
+
+        @Attributes
+            @attribute: @{arg1}        = compared against @{arg2}.
+
+            @attribute: @{arg2}        = compared against @{arg1}.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Elements
+            @element: @{equal}     = the block of code to execute if @{arg1} = @{arg2}.
+
+            @element: @{not-equal} = the block of code to execute if @{arg1} != @{arg2}.
+
+            @element: @{less}      = the block of code to execute if @{arg1} < @{arg2}.
+
+            @element: @{greater}   = the block of code to execute if @{arg1} > @{arg2}.
+
+    -->
+    <macrodef
+        name = "number-compare"
+        description = "Implements a simplistic switch/case for comparing two numbers - less than, greater than, equal to or not equal."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "arg1"         description = "Compared against @{arg2}."/>
+        <attribute  name = "arg2"         description = "Compared against @{arg1}."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <element  name = "equal"      optional = "true"  description = "If @{arg1} == @{arg2}, execute the body of this element."/>
+        <element  name = "not-equal"  optional = "true"  description = "If @{arg1} != @{arg2}, execute the body of this element."/>
+        <element  name = "less"       optional = "true"  description = "If @{arg1} ;gt @{arg2}, execute the body of this element."/>
+        <element  name = "greater"    optional = "true"  description = "If @{arg1} ;lt @{arg2}, execute the body of this element."/>
+
+       <sequential>
+           <keros:assert-is-number  number = "@{arg1}"/>
+           <keros:assert-is-number  number = "@{arg2}"/>
+
+           <ant-contrib:if  description = "If number are equal, execute equals element">
+               <equals arg1 = "@{arg2}"  arg2 = "@{arg1}"/>
+
+               <ant-contrib:then>
+                   <equal/>
+               </ant-contrib:then>
+
+               <ant-contrib:else>
+                   <not-equal/>
+
+                   <ant-contrib:math  result = "keros.number-compare.NUMBER_COMPARE"  operand1 = "@{arg2}"  operation = "-"  operand2 = "@{arg1}"/>
+
+                   <ant-contrib:if  description = "When numbers are compared, if the comparison starts with a dash, @{arg1} is less than @{arg2} so execute less element otherwise execute greater element">
+                       <contains  string = "${keros.number-compare.NUMBER_COMPARE}"  substring = "-"/>
+
+                       <ant-contrib:then>
+                           <less/>
+                       </ant-contrib:then>
+
+                       <ant-contrib:else>
+                           <greater/>
+                       </ant-contrib:else>
+                   </ant-contrib:if>
+               </ant-contrib:else>
+           </ant-contrib:if>
+       </sequential>
+   </macrodef> 
+
+
+    <!--
+
+        This allows one to iterate over a list/files and for each element in the list, have
+        the previous, current and next elements set in the properties named in @{previous},
+        @{current} and @{next}.
+
+        @Attributes
+            @attribute: @{list}        = list to process.
+
+            @attribute: @{delimiter}   = separator for elements in @{list}.
+
+            @attribute: @{previous}    = name of property that will hold the previous element.
+
+            @attribute: @{current}     = name of property that will hold the current element.
+
+            @attribute: @{next}        = name of property that will hold the next element.
+
+            @attribute: @{description} = information about calling this macro.
+
+        @Elements
+            @element: @{path}    = should hold a file list to process.
+
+            @element: @{process} = called for each iteration of elements in the list.  The various
+                                   elements can be accessed via the properties named in @{previous},
+                                   @{current} and @{next}.
+
+    -->
+    <macrodef
+        name = "process-list"
+        description = "Allows one to iterate over a list/files and for each element in the list know the previous, current and next values."
+        uri         = "http://keros.sourceforge.net">
+
+        <attribute  name = "list"         default = ""   description = "The list to process."/>
+        <attribute  name = "delimiter"    default = ","  description = "The delimiter for @{list}."/>
+        <attribute  name = "previous"     default = "keros.PREVIOUS"  description = "Name of property to hold previous value in list."/>
+        <attribute  name = "current"      default = "keros.CURRENT"   description = "Name of property to hold current value in list."/>
+        <attribute  name = "next"         default = "keros.NEXT"      description = "Name of property to hold next value in list."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <element  name = "path"     optional = "true"  description = "Files to process."/>
+        <element  name = "process"  description = "When iterating over @{list}/@{path}, process the contents contained here."/>
+
+        <sequential>
+            <!--
+
+                Initial settings...
+
+            -->
+            <ant-contrib:var  name = "@{previous}"  value = ""  description = "Reset any value for the previous property"/>
+            <ant-contrib:var  name = "@{current}"   value = ""  description = "Reset any value for the current property"/>
+            <ant-contrib:var  name = "@{next}"      value = ""  description = "Reset any value for the next property"/>
+
+            <!--
+
+                Iterate over files and/or the list, calling process
+                for each item.  First iteration we skip as we want
+                to ensure we always have a previous, current and next.
+
+            -->
+            <ant-contrib:for  list = "@{list}"  delimiter = "@{delimiter}"  param = "processlist"  description = "Iterate over files/list calling process for each item">
+                <ant-contrib:path>
+                    <path/>
+                </ant-contrib:path>
+
+                <ant-contrib:sequential>
+                    <ant-contrib:switch  value = "${@{current}}">
+                        <ant-contrib:case  value = "">
+                            <ant-contrib:var  name = "@{current}"  value = "@{processlist}"/>
+                        </ant-contrib:case>
+
+                        <ant-contrib:default>
+                            <ant-contrib:var  name = "@{next}"  value = "@{processlist}"/>
+
+                            <process/>
+
+                            <ant-contrib:var  name = "@{previous}"  value = "${@{current}}"/>
+                            <ant-contrib:var  name = "@{current}"   value = "@{processlist}"/>
+                        </ant-contrib:default>
+                    </ant-contrib:switch>
+                    
+                </ant-contrib:sequential>
+            </ant-contrib:for>
+
+            <!--
+
+                Need to call process with an empty next - meaning end of list.
+
+            -->
+            <ant-contrib:var  name = "@{next}"  value = ""  description = "The final next value is empty - meaning at the end of the list"/>
+
+            <process/>
+        </sequential>
+   </macrodef> 
+
+
+    <!--
+
+        Emits an HTML attribute name and value to file @{file}.  If value is empty ("") nothing
+        is emitted to @{file}.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the attribute to.
+
+            @attribute: @{name}        = the name of the attribute.
+
+            @attribute: @{value}       = the value of the attribute.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+
+        @Example
+            @example: @{file}  = /foo/bar.html
+
+            @example: @{name}  = theta
+
+            @example: @{value} = beta
+
+
+        @Result
+            @result: /foo/bar.html will now contain theta="beta"
+
+
+    -->
+    <macrodef  name = "HtmlAttribute"  description = "Generates an HTML attribute"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"                       description = "The file to write the attribute and value to"/>
+        <attribute  name = "name"                       description = "The literal attribute name"/>
+        <attribute  name = "value"        default = ""  description = "The literable attribute value"/>
+        <attribute  name = "description"  default = ""  description = "Information about calling this macrodef"/>
+
+        <sequential>
+            <ant-contrib:if  description = "Ensure @{dir} exists - if not we fail">
+                <not>
+                    <equals  arg1 = "@{value}"  arg2 = ""/>
+                </not>
+
+                <ant-contrib:then>
+                    <echo  message = "@{name} = &quot;@{value}&quot;  "  file = "@{file}"  append = "true"/>
+                </ant-contrib:then>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML element to file @{file}.  Please note, this macrodef will not generate leaf nodes
+        like: &lt;Foo/&gt; as it has no way of knowing if there are any elements (via the @{HtmlElementBody}
+        subelement).  So, this macrodef will always generate opening and closing leafs like
+        &lt;Foo&gt; &lt;/Foo&gt;
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the attribute to.
+
+            @attribute: @{name}        = the name of the element.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+
+        @Elements
+            @element: @{HtmlAttributes}  = if defined, should contain HtmlAttribute elements.
+
+            @element: @{HtmlElementBody} = the body of the HTML element.
+
+
+        @Example
+            @example: @{file}  = /foo/bar.html
+
+            @example: @{name}  = Theta
+
+
+        @Result
+        @result: /foo/bar.html will now contain &lt;[value of @{name}] [whatever contained in HtmlAttributes]&gt;[whatever is contained in HtmlElementBody]&lt;/[value of @{name}]&gt;
+
+    -->
+    <macrodef  name = "HtmlElement"  description = "Generates an HTML element"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"  description = "The file to write the HTML element to"/>
+        <attribute  name = "name"  description = "The literal name of the element"/>
+        <attribute  name = "description"  default = ""  description = "Information about calling this macrodef"/>
+
+        <element  name = "HtmlAttributes"   optional = "true"  description = "Must contain HTML attributes"/>
+        <element  name = "HtmlElementBody"  optional = "true"  description = "Contains the body of the HTML element"/>
+
+        <sequential>
+            <echo  message = "&lt;@{name} "  file = "@{file}"  append = "true"/>
+            <HtmlAttributes/>
+            <echo  message = "&gt;"  file = "@{file}"  append = "true"/>
+
+            <HtmlElementBody/>
+
+            <echo  message = "&lt;/@{name}&gt;"  file = "@{file}"  append = "true"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML leaf element (meaning no children) to file @{file}.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the attribute to.
+
+            @attribute: @{name}        = the name of the element.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+
+        @Elements
+            @element: @{HtmlAttributes}  = if defined, should contain HtmlAttribute elements.
+
+            @element: @{HtmlElementBody} = the body of the HTML element.
+
+
+        @Example
+            @example: @{file}  = /foo/bar.html
+
+            @example: @{name}  = Theta
+
+
+        @Result
+        @result: /foo/bar.html will now contain &lt;[value of @{name}] [whatever contained in HtmlAttributes]&gt;[whatever is contained in HtmlElementBody]&lt;/[value of @{name}]&gt;
+
+    -->
+    <macrodef  name = "HtmlLeafElement"  description = "Generates an HTML element"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"  description = "The file to write the HTML element to"/>
+        <attribute  name = "name"  description = "The literal name of the element"/>
+        <attribute  name = "description"  default = ""  description = "Information about calling this macrodef"/>
+
+        <element  name = "HtmlAttributes"   optional = "true"  description = "Must contain HTML attributes"/>
+
+        <sequential>
+            <echo  message = "&lt;@{name} "  file = "@{file}"  append = "true"/>
+            <HtmlAttributes/>
+            <echo  message = "/&gt;"  file = "@{file}"  append = "true"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits text to file @{file}.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the text to.
+
+            @attribute: @{text}        = the text to emit to @{file}.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+
+        @Example
+            @example: @{file}  = /foo/bar.html
+
+            @example: @{text}  = Theta
+
+
+        @Result
+
+            @result: /foo/bar.html will now contain Theta
+
+
+    -->
+    <macrodef  name = "HtmlText"  description = "Generates and HTML text value"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"  description = "The file to write the value of @{text} to"/>
+        <attribute  name = "text"  description = "The literal text to write to @{file}"/>
+        <attribute  name = "description"  default = ""/>
+
+        <sequential>
+            <echo  message = "@{text} "  file = "@{file}"  append = "true"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML html element to @{file}.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the html element to.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+
+        @Elements
+            @element: @{HtmlDocumentBody} = the body of the HTML dcoument element.
+
+
+        @Example
+            @example: @{file}  = /foo/bar.html
+
+            @example: @{name}  = Theta
+
+
+        @Result
+
+            @result: /foo/bar.html will now contain &lt;html&gt;[whatever is contained in HtmlDocumentBody]&lt;/html&gt;
+
+    -->
+    <macrodef  name = "HtmlDocument"  description = "Generates an HTML document"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"  description = "The file to write the html element to"/>
+        <attribute  name = "description"  default = ""/>
+
+        <element  name = "HtmlDocumentBody"  implicit = "true"  description = "The body of the HTML document"/>
+
+        <sequential>
+            <keros:HtmlElement  file = "@{file}"  name = "html">
+                <keros:HtmlElementBody>
+                    <HtmlDocumentBody/>
+                </keros:HtmlElementBody>
+            </keros:HtmlElement>
+        </sequential>
+    </macrodef>
+
+
+
+    <!--
+
+        Emits an HTML break to file @{file}.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the break to.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+
+        @Example
+            @example: @{file}  = /foo/bar.html
+
+
+        @Result
+
+            @result: /foo/bar.html will now contain &lt;br&gt;&lt;/br&gt;
+
+    -->
+    <macrodef  name = "HtmlBreak"  description = "Generates n HTML break"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"  description = "File to write the HTML break to"/>
+        <attribute  name = "description"  default = ""/>
+
+        <sequential>
+            <keros:HtmlLeafElement  file = "@{file}"  name = "br"/>
+        </sequential>
+    </macrodef>
+
+
+
+    <!--
+
+        Emits an HTML header to file @{file}.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the header to.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+
+        @Example
+            @example: @{file}   = /foo/bar.html
+
+            @example: @{number} = 1
+
+            @example: @{text}   = Hello World
+
+
+        @Result
+
+            @result: /foo/bar.html will now contain &lt;h1&gt;Hello World&lt;/h1&gt;
+
+    -->
+    <macrodef  name = "HtmlHeader"  description = "Generates an HTML header"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"    description = "The file to write the HTML header to"/>
+        <attribute  name = "number"  description = "The header number - for example H1"/>
+        <attribute  name = "text"    description = "The text of the header"/>
+        <attribute  name = "description"  default = ""/>
+
+        <sequential>
+            <keros:HtmlElement  file = "@{file}"  name = "h@{number}">
+                <keros:HtmlElementBody>
+                    <keros:HtmlText  file = "@{file}"  text = "@{text}"/>
+                </keros:HtmlElementBody>
+            </keros:HtmlElement>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML anchor to @{file}.  Please see the attributes for real HTML
+        anchor for a description of attributes charset - type.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the anchor to.
+
+            @attribute: @{text}        = the text for the anchor
+
+            @attribute: @{description} = information about calling this macrodef.
+
+    -->
+    <macrodef  name = "HtmlAnchor"  description = "Generates an HTML anchor"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"         description = "The file to write the anchor to"/>
+        <attribute  name = "charset"      default = ""/>
+        <attribute  name = "coords"       default = ""/>
+        <attribute  name = "href"         default = ""/>
+        <attribute  name = "hreflang"     default = ""/>
+        <attribute  name = "name"         default = ""/>
+        <attribute  name = "rel"          default = ""/>
+        <attribute  name = "rev"          default = ""/>
+        <attribute  name = "shape"        default = ""/>
+        <attribute  name = "target"       default = ""/>
+        <attribute  name = "type"         default = ""/>
+        <attribute  name = "text"         description = "The text of the anchor"/>
+        <attribute  name = "description"  default = ""/>
+
+        <sequential>
+            <keros:HtmlElement  file = "@{file}"  name = "a">
+                <keros:HtmlAttributes>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "charset"    value = "@{charset}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "coords"     value = "@{coords}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "href"       value = "@{href}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "hreflang"   value = "@{hreflang}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "name"       value = "@{name}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "rel"        value = "@{rel}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "rev"        value = "@{rev}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "shape"      value = "@{shape}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "target"     value = "@{target}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "type"       value = "@{type}"/>
+                </keros:HtmlAttributes>
+
+                <keros:HtmlElementBody>
+                    <keros:HtmlText  file = "@{file}"  text = "@{text}"/>
+                </keros:HtmlElementBody>
+            </keros:HtmlElement>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML unordered list to @{file}.  Please see the attributes for real HTML
+        unordered list for a description of attributes class - tabindex.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the unordered to.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+    -->
+    <macrodef  name = "HtmlUnorderedList"  description = "Generates an HTML unordered list"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"         description = "The file to write the anchor to"/>
+        <attribute  name = "class"        default = ""/>
+        <attribute  name = "id"           default = ""/>
+        <attribute  name = "style"        default = ""/>
+        <attribute  name = "title"        default = ""/>
+        <attribute  name = "dir"          default = ""/>
+        <attribute  name = "lang"         default = ""/>
+        <attribute  name = "accesskey"    default = ""/>
+        <attribute  name = "tabindex"     default = ""/>
+        <attribute  name = "description"  default = ""/>
+
+        <element  name = "UnorderedListBody"  implicit = "true"  description = "The frame set contents"/>
+
+        <sequential>
+            <keros:HtmlElement  file = "@{file}"  name = "ul">
+                <keros:HtmlAttributes>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "class"      value = "@{class}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "id"         value = "@{id}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "style"      value = "@{style}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "title"      value = "@{title}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "dir"        value = "@{dir}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "lang"       value = "@{lang}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "accesskey"  value = "@{accesskey}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "tabindex"   value = "@{tabindex}"/>
+                </keros:HtmlAttributes>
+
+                <keros:HtmlElementBody>
+                    <UnorderedListBody/>
+                </keros:HtmlElementBody>
+            </keros:HtmlElement>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML div to @{file}.  Please see the attributes for real HTML
+        div for a description of attributes charset - type.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the div to.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+    -->
+    <macrodef  name = "HtmlDiv"  description = "Generates an HTML unordered list"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"         description = "The file to write the anchor to"/>
+        <attribute  name = "class"        default = ""/>
+        <attribute  name = "id"           default = ""/>
+        <attribute  name = "style"        default = ""/>
+        <attribute  name = "title"        default = ""/>
+        <attribute  name = "dir"          default = ""/>
+        <attribute  name = "lang"         default = ""/>
+        <attribute  name = "accesskey"    default = ""/>
+        <attribute  name = "tabindex"     default = ""/>
+        <attribute  name = "description"  default = ""/>
+
+        <element  name = "DivUnorderedListBody"  implicit = "true"  description = "The frame set contents"/>
+
+        <sequential>
+            <keros:HtmlElement  file = "@{file}"  name = "div">
+                <keros:HtmlAttributes>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "class"      value = "@{class}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "id"         value = "@{id}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "style"      value = "@{style}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "title"      value = "@{title}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "dir"        value = "@{dir}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "lang"       value = "@{lang}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "accesskey"  value = "@{accesskey}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "tabindex"   value = "@{tabindex}"/>
+                </keros:HtmlAttributes>
+
+                <keros:HtmlElementBody>
+                    <DivUnorderedListBody/>
+                </keros:HtmlElementBody>
+            </keros:HtmlElement>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML link to @{file}.  Please see the attributes for real HTML
+        links for a description of attributes charset - type.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the link to.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+    -->
+    <macrodef  name = "HtmlLink"  description = "Generates an HTML anchor"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"         description = "The file to write the anchor to"/>
+        <attribute  name = "charset"      default = ""/>
+        <attribute  name = "href"         default = ""/>
+        <attribute  name = "hreflang"     default = ""/>
+        <attribute  name = "media"        default = ""/>
+        <attribute  name = "rel"          default = ""/>
+        <attribute  name = "rev"          default = ""/>
+        <attribute  name = "target"       default = ""/>
+        <attribute  name = "type"         default = ""/>
+        <attribute  name = "description"  default = ""/>
+
+        <sequential>
+            <keros:HtmlElement  file = "@{file}"  name = "link">
+                <keros:HtmlAttributes>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "charset"    value = "@{charset}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "href"       value = "@{href}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "hreflang"   value = "@{hreflang}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "media"      value = "@{media}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "rel"        value = "@{rel}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "rev"        value = "@{rev}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "target"     value = "@{target}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "type"       value = "@{type}"/>
+                </keros:HtmlAttributes>
+            </keros:HtmlElement>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML frame to @{file}.  Please see the attributes for real HTML
+        frame for a description of attributes frameborder - src.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the frame to.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+    -->
+    <macrodef  name = "HtmlFrame"  description = "Generates an HTML frame"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"          description = "The file to write the frame to"/>
+        <attribute  name = "frameborder"   default = ""/>
+        <attribute  name = "longdesc"      default = ""/>
+        <attribute  name = "marginheight"  default = ""/>
+        <attribute  name = "marginwidth"   default = ""/>
+        <attribute  name = "name"          default = ""/>
+        <attribute  name = "noresize"      default = ""/>
+        <attribute  name = "scrolling"     default = ""/>
+        <attribute  name = "src"           default = ""/>
+        <attribute  name = "description"   default = ""/>
+
+        <sequential>
+            <keros:HtmlElement  file = "@{file}"  name = "frame">
+                <keros:HtmlAttributes>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "frameborder"   value = "@{frameborder}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "longdesc"      value = "@{longdesc}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "marginheight"  value = "@{marginheight}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "marginwidth"   value = "@{marginwidth}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "name"          value = "@{name}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "noresize"      value = "@{noresize}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "scrolling"     value = "@{scrolling}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "src"           value = "@{src}"/>
+                </keros:HtmlAttributes>
+            </keros:HtmlElement>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML frame set to @{file}.  Please see the attributes for real HTML
+        frame set for a description of attributes cols - rows.
+
+
+        @Attributes
+            @attribute: @{file}        = the file to write the frame set to.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+
+        @Elements
+            @element: @{FrameSetBody} = The contents of the frame set.
+
+    -->
+    <macrodef  name = "HtmlFrameSet"  description = "Generates an HTML frameset"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "file"         description = "The file to write the frame set to"/>
+        <attribute  name = "cols"         default = ""/>
+        <attribute  name = "rows"         default = ""/>
+        <attribute  name = "description"  default = ""/>
+
+        <element  name = "FrameSetBody"  implicit = "true"  description = "The frame set contents"/>
+
+        <sequential>
+            <keros:HtmlElement  file = "@{file}"  name = "frameset">
+                <keros:HtmlAttributes>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "cols"  value = "@{cols}"/>
+                    <keros:HtmlAttribute  file = "@{file}"  name = "rows"  value = "@{rows}"/>
+                </keros:HtmlAttributes>
+
+                <keros:HtmlElementBody>
+                    <FrameSetBody/>
+                </keros:HtmlElementBody>
+            </keros:HtmlElement>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML anchor and break to @{toc-file}.  Should be used in conjunction
+        with NavDef.
+
+
+        @Attributes
+            @attribute: @{toc-file}    = the file to write the anchor and break to.
+
+            @attribute: @{text}        = text of the HTML anchor.
+
+            @attribute: @{href}        = link for the HTML anchor.
+
+            @attribute: @{target}      = target of the HTML anchor.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+    -->
+    <macrodef  name = "NavItem"  description = "An item that is navigatable"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "toc-file"     description = "Table of contents file to write anchor and break to"/>
+        <attribute  name = "text"         description = "Text of the HTML anchor"/>
+        <attribute  name = "href"         description = "Link for the HTML anchor"/>
+        <attribute  name = "target"       default = "content-frame"  description = "Target of the HTML anchor"/>
+        <attribute  name = "description"  default = ""/>
+
+        <sequential>
+            <keros:HtmlAnchor  file = "@{toc-file}"  text = "@{text}"  href = "@{href}"  target = "@{target}"/>
+
+            <keros:HtmlBreak  file = "@{toc-file}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Emits an HTML anchor and break to @{toc-file}.  Should be used in conjunction
+        with NavDef.
+
+
+        @Attributes
+            @attribute: @{toc-file}    = the file to write the anchor and break to.
+
+            @attribute: @{text}        = text of the HTML anchor.
+
+            @attribute: @{href}        = link for the HTML anchor.
+
+            @attribute: @{target}      = target of the HTML anchor.
+
+            @attribute: @{description} = information about calling this macrodef.
+
+    -->
+    <macrodef  name = "NavItemIndent"  description = "An item that is navigatable"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "toc-file"     description = "Table of contents file to write anchor and break to"/>
+        <attribute  name = "text"         description = "Text of the HTML anchor"/>
+        <attribute  name = "href"         description = "Link for the HTML anchor"/>
+        <attribute  name = "target"       default = "content-frame"  description = "Target of the HTML anchor"/>
+        <attribute  name = "description"  default = ""/>
+
+        <sequential>
+            <keros:HtmlDiv  file = "@{toc-file}"  style = "padding-left:1em">
+                <keros:NavItem  toc-file = "@{toc-file}"  text = "@{text}"  href = "@{href}"  target = "@{target}"/>
+            </keros:HtmlDiv>
+        </sequential>
+    </macrodef>
+
+    
+    <!--
+
+        Emits two HTML files - one containing a table of contents, the other containing
+        a frameset that holds both contents and a table of contents (left pane).
+
+
+        @Attributes
+            @attribute: @{main-file}    = the main file containing the frameset.
+
+            @attribute: @{cols}         = the cols attribute of the frameset.
+
+            @attribute: @{toc-file}     = the table of contents file.
+
+            @attribute: @{toc-title}    = the header (title) for the table of contents.
+
+            @attribute: @{toc-name}     = the name of the frame that holds the table of contents.
+
+            @attribute: @{content-name} = the name of the frame that holds the contents.
+
+            @attribute: @{description}  = information about calling this macrodef.
+
+
+        @Elements
+            @element: @{NavDefBody} = contents of the navdef.
+
+    -->
+    <macrodef  name = "NavDef"  description = "Define a navigation HTML window"  uri = "http://keros.sourceforge.net">
+        <attribute  name = "main-file"        description = "The main file containing the frameset"/>
+        <attribute  name = "cols"             default = "25%,75%"  description = "Columns attribute of the frameset"/>
+        <attribute  name = "toc-file"         description = "The table of contents file"/>
+        <attribute  name = "toc-title"        default = ""               description = "The title for the table of contents"/>
+        <attribute  name = "toc-name"         default = "toc-frame"      description = "The frame name of the table of contents"/>
+        <attribute  name = "content-name"     default = "content-frame"  description = "The frame name for the content"/>
+        <attribute  name = "default-content"  default = ""               description = "The default page to display in the content frame"/>
+
+        <element  name = "NavDefBody"  implicit = "true"/>
+
+        <sequential>
+            <keros:HtmlDocument  file = "@{main-file}">
+                <keros:HtmlFrameSet  file = "@{main-file}"  cols =  "@{cols}">
+                    <keros:HtmlHeader  file = "@{main-file}"  number = "1"  text = "@{toc-title}"/>
+                    <keros:HtmlFrame   file = "@{main-file}"   src = "@{toc-file}"         name = "@{toc-name}"/>
+                    <keros:HtmlFrame   file = "@{main-file}"   src = "@{default-content}"  name = "@{content-name}"/>
+                </keros:HtmlFrameSet>
+            </keros:HtmlDocument>
+
+            <keros:HtmlDocument  file = "@{toc-file}">
+                <keros:HtmlHeader  file = "@{toc-file}"  number = "2"  text = "@{toc-title}"/>
+                <NavDefBody/>
+            </keros:HtmlDocument>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+        
+        This target will output defined properties to the console...
+
+    -->
+    <target  name = "keros.print-properties">
+        <echo>
+            -----------------------------------------------------
+            KEROS PROPERTIES
+            -----------------------------------------------------
+
+            keros.HOME                 = ${keros.HOME}
+
+            keros.project.HOME         = ${keros.project.HOME}
+            keros.properties.FILE      = ${keros.properties.FILE}
+
+            keros.VERSION              = ${keros.VERSION}
+            keros.state.HOME           = ${keros.state.HOME}
+            keros.version.HOME         = ${keros.version.HOME}
+
+            keros.lib.DIR_NAME         = ${keros.lib.DIR_NAME}
+
+            keros.dependency.HOME      = ${keros.dependency.HOME}
+            keros.lib.HOME             = ${keros.lib.HOME}
+
+            keros.doc.DIR_NAME         = ${keros.doc.DIR_NAME}
+            keros.doc.HOME             = ${keros.doc.HOME}
+
+            keros.resources.DIR_NAME   = ${keros.resources.DIR_NAME}
+            keros.resources.HOME       = ${keros.resources.HOME}
+
+            keros.xsl.DIR_NAME         = ${keros.xsl.DIR_NAME}
+            keros.xsl.HOME             = ${keros.xsl.HOME}
+
+            keros.ivy.HOME             = ${keros.ivy.HOME}
+
+            keros.LOCALE               = ${keros.LOCALE}
+            keros.locale.HOME          = ${keros.locale.HOME}
+        </echo>
+    </target>
+</project>

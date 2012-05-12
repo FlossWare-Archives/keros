@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <title>Requirements</title>
+  <meta content="sfloess" name="author">
+  <meta content="Contains requirements information regarding Keros"
+ name="description">
+</head>
+<body dir="ltr"
+ style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);"
+ alink="#ee0000" lang="en-US" link="#0000ee" vlink="#551a8b">
+<h1 align="center">Keros @keros-project.release.VERSION@</h1>
+<h1 align="center">Requirements<br>
+</h1>
+<ul>
+</ul>
+<h3><a name="Project_Requirements"></a>Project Requirements</h3>
+&nbsp; Keros
+must:<br>
+<ul>
+  <li>Support all platforms that support <a href="http://java.sun.com/">Java</a>
+and <a href="http://ant.apache.org/">Ant</a>.</li>
+  <li>Work for you not against you - even "right out of the box."<br>
+  </li>
+  <li>Provide enough default functionality to be "just good enough."</li>
+  <li>Be project friendly - contain enough functionality to use for
+whatever is needed for a project.</li>
+  <li>If "just good enough" is not sufficient - be easy to override in
+a hassle free way.</li>
+</ul>
+<ul style="margin-left: 40px;">
+</ul>
+To understand the source, one should be
+familiar with <a href="http://ant.apache.org/">Ant</a>, <a
+ href="http://www.w3.org/XML/">XML</a> (including namespaces),&nbsp;<a
+ href="http://www.w3.org/Style/XSL">XSL</a>, <a
+ href="http://ant-contrib.sourceforge.net/">Ant-Contrib</a>, and <a
+ href="http://www.beanshell.org/">Beanshell</a>.<br>
+<h3><a name="Downloads"></a>Downloads</h3>
+<span style="font-weight: bold;"><a name="Manual_Downloads"></a>Manual
+Downloads</span><br>
+<ul>
+  <li><a href="http://ant.apache.org/">Ant 1.7.1+</a> (preferably 1.7.1
+to simplify using the included libraries)</li>
+  <li><a href="http://java.sun.com/">Java 1.5+</a></li>
+  <li><a href="http://subversion.tigris.org/">Subversion</a>:&nbsp;
+only
+if used for source control and utilizing the <a
+ href="documentation-macros.html#svn2html">Subversion to HTML</a> macrodef.&nbsp; It convert <a
+ href="http://subversion.tigris.org/">Subversion</a> logs to a decent
+HTML representation.</li>
+</ul>
+<a style="font-weight: bold;" name="Included_Downloads"></a><span
+ style="font-weight: bold;">Included</span>
+<div style="margin-left: 40px;">
+<ul>
+</ul>
+</div>
+<ul>
+</ul>
+<ul>
+  <li><a href="http://ant.apache.org/ivy/index.html">Ivy</a>:&nbsp;
+manages third party dependencies (or libraries).</li>
+  <li><a href="http://findbugs.sourceforge.net/">Find Bugs</a>:&nbsp;
+Java code analysis.&nbsp; <span style="font-style: italic;">Please
+note:</span>&nbsp; at the time of this release, we were having trouble
+with utilizing <a href="http://ant.apache.org/ivy/index.html">Ivy</a>
+to download this library.<br>
+  </li>
+</ul>
+Both <a href="http://ant.apache.org/ivy/index.html">Ivy</a> and <a
+ href="http://findbugs.sourceforge.net/">Find Bugs</a> are included,
+and therefore available to those projects that import either <a
+ href="keros.html">keros.xml</a> or <a href="keros-project.html">keros-project.xml</a>.&nbsp;
+Also available are the <a href="#Automagic_Downloads">automagic</a>
+downloads used by Keros.<br>
+<br>
+<a style="font-weight: bold;" name="Automagic_Downloads"></a><span
+ style="font-weight: bold;">Automagic<br>
+</span>The following third party
+libraries will be used by Keros (and
+therefore available to you):<br>
+<ul>
+  <li><a href="http://ant-contrib.sourceforge.net/">Ant-Contrib</a>:&nbsp;
+useful Ant libraries.</li>
+  <li><a href="http://www.beanshell.org/">Beanshell</a>:&nbsp;
+used in some <a
+ href="http://ant.apache.org/manual/OptionalTasks/scriptdef.html">scriptdef</a>
+definitions.</li>
+  <li><a href="http://jakarta.apache.org/bsf">Bean Scripting Framework</a>:&nbsp;
+used in some <a
+ href="http://ant.apache.org/manual/OptionalTasks/scriptdef.html">scriptdef</a>
+definitions.</li>
+  <li><a href="http://www.castor.org/index.html">Castor</a>:&nbsp; used
+to generate Java from XSD's.<br>
+  </li>
+  <li><a href="https://javacc.dev.java.net/">JavaCC</a>:&nbsp; used for
+building parsers.</li>
+</ul>
+<span style="font-style: italic;"></span>Keros
+(actually <a href="http://ant.apache.org/ivy/index.html">Ivy</a>)
+downloads and installs the aforementioned
+<a href="requirements.html#Automagic_Downloads">automagic</a> libraries
+to <span style="font-family: Courier New,Courier,monospace;">${user.home}/.keros/[release]/lib</span>
+- for example <span style="font-family: Courier New,Courier,monospace;">/home/sfloess/.keros/1.0/lib</span>
+<br>
+<p align="center"><a href="http://sourceforge.net/"><img
+ src="http://sourceforge.net/sflogo.php?group_id=214037&amp;type=6"
+ name="graphics1" alt="SourceForge.net Logo" align="bottom" border="0"
+ height="62" width="210"></a></p>
+</body>
+</html>

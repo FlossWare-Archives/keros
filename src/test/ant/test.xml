@@ -1,0 +1,29 @@
+<!--
+
+    Tests everything.
+
+    Modifications:
+        $Date: 2008-10-25 14:22:28 -0400 (Sat, 25 Oct 2008) $
+        $Revision: 63 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/test/ant/test.xml $
+
+-->
+<project  name = "test"  default = "test"  xmlns:keros-test = "http://keros.sourceforge.net/test">
+    <description>
+        This tests the Keros Ant environment.
+    </description>
+
+
+    <dirname  file = "${ant.file.test}"  property = "test.HOME"/>
+
+
+    <!--
+      -
+      - This target will kick off all the tests.
+      -
+      -->
+    <target  name = "test">
+        <ant  inheritAll = "false"  inheritRefs = "false"  antfile = "${test.HOME}/test-keros.xml"/>
+    </target>
+</project>

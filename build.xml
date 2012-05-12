@@ -1,0 +1,132 @@
+<!--
+
+    The properties for the Keros build script.
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/build.xml $
+
+-->
+<project
+    name        = "Main Build for Keros"
+    default     = "keros-base-project.all"
+    basedir     = "."
+    xmlns:keros = "http://keros.sourceforge.net">
+
+
+    <!--
+
+        Reuse the macros...
+
+    -->
+    <import  file = "src/dev/ant/keros.xml"                       description = "Reuse Keros functionaltiy"/>
+    <import  file = "src/dev/ant/projects/keros-ant-project.xml"  description = "Contains Keros Ant project functionality."/>
+
+
+    <!--
+    
+        Release information.
+
+    -->
+    <keros:set-property  is-warnable = "false"  property = "keros-base-project.release.VERSION"           value = "${keros.VERSION}"/>
+    <keros:set-property  is-warnable = "false"  property = "keros-base-project.release.PREFIX"            value = "keros-"/>
+
+    <keros:set-property  is-warnable = "false"  property = "keros-application-project.release.FILE_NAME"  value = "keros-${keros-base-project.release.VERSION}"/>
+    <keros:set-property  is-warnable = "false"  property = "keros-source-project.release.FILE_NAME"       value = "keros-src-${keros-base-project.release.VERSION}"/>
+    <keros:set-property  is-warnable = "false"  property = "keros-base-project.release.lib.FILE_NAME"     value = "keros-lib-${keros-base-project.release.VERSION}"/>
+    <keros:set-property  is-warnable = "false"  property = "keros-document-project.release.FILE_NAME"     value = "keros-doc-${keros-base-project.release.VERSION}"/>
+    <keros:set-property  is-warnable = "false"  property = "keros-base-project.release.FILE_NAME"         value = "keros-${keros-base-project.release.VERSION}"/>
+
+    <keros:set-property  is-warnable = "false"  property = "keros-ant-project.document.INCLUDES"          value = "build.xml, src/dev/ant/keros.xml, src/dev/ant/keros-base-project.xml, src/dev/ant/projects/keros-*-project.xml"/>
+
+
+    <!--
+
+        Documentation for Ant and Subversion...
+
+    -->
+    <path  id = "keros.release.application.path.REF_ID"  description = "Default path for Ant application release.">
+        <path  refid = "keros-application-project.release.path.REF_ID"/>
+
+        <path  location = "src/dev/ant"/>
+        <path  location = "src/dev/resources"/>
+        <path  location = "src/dev/xsl"/>
+    </path>
+
+    <keros:set-property  property = "keros-application-project.release.PATH"  value = "keros.release.application.path.REF_ID"  description = "Property that holds the name of the application release's path ref id."/>
+
+
+    <!--
+    
+        Performs testing...
+
+    -->
+    <target  name = "keros-base-project.test"  unless ="keros-base-project.test.SKIP"  depends = "keros-base-project.compile"  description = "Perform Testing">
+        <ant  antfile = "src/test/ant/test.xml"/>
+    </target>
+
+
+    <!--
+
+        Overriding from keros-project to provide Ant to HTML documentation...
+
+    -->
+    <target  name = "keros-base-project.release"  depends = "keros-ant-project.release"  description = "Overridden logic from keros-base-project for Ant documentation"/>
+
+
+    <!--
+
+        Called to create a release of the documentation.
+
+    -->
+    <target  name = "keros-document-project.generate"  description = "Create environment documentation release.">
+        <keros:NavDef  main-file = "${keros-document-project.generated.HOME}/index.html"  toc-file = "toc.html"  toc-title = "Keros @keros-base-project.release.VERSION@"  default-content = "summary.html">
+            <keros:HtmlHeader  file = "${keros-document-project.generated.HOME}/toc.html"  number = "1"  text = "Keros"/>
+
+            <keros:HtmlText    file = "${keros-document-project.generated.HOME}/toc.html"  text = "Welcome to Keros!  This project encompases an environment for cross platform scripting and development."/>
+            <keros:HtmlHeader  file = "${keros-document-project.generated.HOME}/toc.html"  number = "2"  text = "Table of Contents"/>
+
+            <keros:NavItem        toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Summary"         href = "summary.html"/>
+            <keros:NavItem        toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Requirements"    href = "requirements.html"/>
+            <keros:NavItem        toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Conventions"     href = "conventions.html"/>
+
+            <keros:HtmlBreak      file     = "${keros-document-project.generated.HOME}/toc.html"/>
+
+            <keros:NavItem        toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Modules"                       href = "modules.html"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Keros"                         href = "ant/src/dev/ant/keros.html"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Keros Project"                 href = "ant/src/dev/ant/keros-base-project.html"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Keros Ant Project"             href = "ant/src/dev/ant/projects/keros-ant-project.html"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Keros Java Project"            href = "ant/src/dev/ant/projects/keros-java-project.html"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Keros JavaCC Project"          href = "ant/src/dev/ant/projects/keros-javacc-project.html"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Keros FindBugs Project"        href = "ant/src/dev/ant/projects/keros-findbugs-project.html"/>
+
+            <keros:HtmlBreak      file     = "${keros-document-project.generated.HOME}/toc.html"/>
+
+            <keros:NavItem        toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "How To"                       href = "how-to.html"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "3rd Party Libraries"          href = "how-to.html#Utilizing_Third_Party_Libraries"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Including Keros"              href = "how-to.html#Include_Keros"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Ant Doc"                      href = "how-to.html#Ant_Doc"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Ant To HTML"                  href = "how-to.html#Ant_To_HTML"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Subversion To HTML"           href = "how-to.html#Subversion_To_HTML"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Generate App Version Number"  href = "how-to.html#Application_Version_Number"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Ivy"                          href = "how-to.html#Ivy"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Using Subprojects"            href = "how-to.html#Sub_Projects"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Compiling Java Subprojects"   href = "how-to.html#Compiling_Java_Subprojects"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Directory Properties"         href = "how-to.html#Directory_Properties"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Releases"                     href = "how-to.html#Releases"/>
+            <keros:NavItemIndent  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Building Keros"               href = "how-to.html#Building_Keros"/>
+
+            <keros:HtmlBreak      file     = "${keros-document-project.generated.HOME}/toc.html"/>
+
+            <keros:NavItem        toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Past Releases"   href = "past-releases.html"/>
+
+            <keros:HtmlHeader  file = "${keros-document-project.generated.HOME}/toc.html"  number = "2"  text = "Project Links"/>
+
+            <keros:NavItem  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Sourceforge Project Page"      href = "http://sourceforge.net/projects/keros"/>
+            <keros:NavItem  toc-file = "${keros-document-project.generated.HOME}/toc.html"  text = "Downloads"                     href = "http://sourceforge.net/project/showfiles.php?group_id=214037"/>
+        </keros:NavDef>
+    </target>
+</project>
+

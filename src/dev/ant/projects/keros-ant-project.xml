@@ -1,0 +1,227 @@
+<!--
+
+    A vanilla project script.
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/projects/keros-ant-project.xml $
+        
+-->
+<project
+    name                    = "keros-ant-project"
+    default                 = "keros-ant-project.all"
+    
+    xmlns:ant-contrib       = "http://ant-contrib.sourceforge.net" 
+    xmlns:ivy               = "antlib:org.apache.ivy.ant"
+    xmlns:keros-ant-project = "http://keros.sourceforge.net/project/ant"
+    xmlns:keros             = "http://keros.sourceforge.net">
+
+
+    <description>
+        Keros Ant project.  It is assumed an Ant project consists of source, documentation
+        and and application.
+    </description>
+
+
+    <!--
+
+        Imports...
+
+    -->
+    <import  file = "keros-application-project.xml"  description = "Contains Keros application project functionality."/>
+    <import  file = "keros-source-project.xml"       description = "Contains Keros source project functionality."/>
+
+    <!--
+
+      ========================================================================
+                                      Ant Properties
+      ========================================================================
+
+    -->
+
+    <keros:auto-property  property = "keros-ant-project.document.generated.DIR_NAME"  default = "ant"/>
+    <keros:auto-property  property = "keros-ant-project.document.generated.HOME"      default = "${keros-document-project.generated.HOME}/${keros-ant-project.document.generated.DIR_NAME}"/>
+
+    <keros:auto-property  property = "keros-ant-project.document.INCLUDES"            default = "**/build.xml"/>
+
+    <!--
+    <path  id = "keros-ant-project.release.documentation.path.REF_ID"  description = "Default path for Ant application release.">
+        <path  refid = "keros-documentation-project.release.PATH"/>
+
+        <fileset dir = "${keros-ant-project.documentation.generated.HOME}"/>
+    </path>
+
+    <keros:set-property  property = "keros-document-project.release.PATH"  value = "keros-ant-project.release.documentation.path.REF_ID"  description = "Add Ant documentation to the document release path"/>
+
+    <path  id = "keros-ant-project.release.application.path.REF_ID"  description = "Default path for Ant application release.">
+        <path  refid = "keros-application-project.release.PATH"/>
+
+        <fileset dir = "${keros-ant-project.application.generated.HOME}"/>
+    </path>
+    -->
+
+    <path  id = "keros-ant-project.release.application.path.REF_ID"  description = "Default path for Ant application release.">
+        <path  refid = "keros-application-project.release.path.REF_ID"/>
+
+        <dirset dir = "${keros-source-project.HOME}/dev/ant"/>
+    </path>
+
+    <keros:set-property  property = "keros-application-project.release.PATH"  value = "keros-ant-project.release.application.path.REF_ID"  description = "Property that holds the name of the application release's path ref id."/>
+
+
+    <!--
+
+        Will take a directory and recursively apply "Ant Doc" (ie just like JavaDoc)
+        to all the files found.
+
+
+        @Attributes
+
+            @attribute: @{dir}         = the directory to start recursively applying AntDoc.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "antDoc"
+        description = "Converts Ant scripts to HTML"
+        uri         = "http://keros.sourceforge.net/project/ant">
+
+        <attribute  name = "dir"          description = "The directory to start recursively applying AntDoc."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <replace  dir = "@{dir}">
+                <replacetoken>@Attributes</replacetoken>
+                <replacevalue><![CDATA[<p/><b>Attributes</b>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>@Elements</replacetoken>
+                <replacevalue><![CDATA[<p/><b>Elements</b>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>@Example</replacetoken>
+                <replacevalue><![CDATA[<p/><b>Example</b>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>@Result</replacetoken>
+                <replacevalue><![CDATA[<p/><b>Result</b>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>@{</replacetoken>
+                <replacevalue><![CDATA[<code>@{]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>}</replacetoken>
+                <replacevalue><![CDATA[}</code>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>@attribute:</replacetoken>
+                <replacevalue><![CDATA[<br/>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>@element:</replacetoken>
+                <replacevalue><![CDATA[<br/>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>@result:</replacetoken>
+                <replacevalue><![CDATA[<br/>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>@example:</replacetoken>
+                <replacevalue><![CDATA[<br/>]]></replacevalue>
+            </replace>
+
+            <replace  dir = "@{dir}">
+                <replacetoken>Please note:</replacetoken>
+                <replacevalue><![CDATA[<i>Please note:</i>]]></replacevalue>
+            </replace>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Converts Ant to HTML.
+
+
+        @Attributes
+
+            @attribute: @{basedir}     = the directory in which to start searching for Ant scripts.
+
+            @attribute: @{dest-dir}     = the directory in which the transformation will occur.
+
+            @attribute: @{includes}    = the file pattern to include when transforming.
+
+            @attribute: @{version}     = the version number/value to include in the heading.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "ant2html"
+        description = "Converts Ant scripts to HTML"
+        uri         = "http://keros.sourceforge.net/project/ant">
+
+        <attribute  name = "basedir"      description = "The directory in which to start searching for Ant scripts."/>
+        <attribute  name = "dest-dir"     description = "The directory in which the transformation will occur."/>
+        <attribute  name = "includes"     description = "The file pattern to include when transforming."/>
+        <attribute  name = "version"      default = ""  description = "The version number/value to include in the heading."/>
+        <attribute  name = "description"  default = ""  description = "Information about this macro call."/>
+
+        <sequential>
+            <xslt  basedir = "@{basedir}"  destdir = "@{dest-dir}"  includes = "@{includes}"  style = "${keros.xsl.HOME}/ant2html.xsl">
+                <param  name = "pVersion"  expression = "@{version}"/>
+            </xslt>
+
+            <keros-ant-project:antDoc  dir = "@{dest-dir}"/>
+        </sequential>
+    </macrodef>
+
+
+	<!--
+
+        This target will create HTML for all build scripts...
+
+	-->
+    <target  name = "keros-ant-project.document"  unless = "keros-ant-project.document.SKIP"  description = "Default logic for Ant document generation">
+        <keros-ant-project:ant2html  basedir = "${keros-base-project.HOME}"  dest-dir = "${keros-ant-project.document.generated.HOME}"  includes = "${keros-ant-project.document.INCLUDES}"  version = "${keros-base-project.release.VERSION}"/>
+    </target>
+
+   <target  name = "keros-ant-project.release"  depends = "keros-ant-project.document, keros-application-project.release, keros-document-project.release, keros-source-project.release"/>
+
+   <target  name = "keros-base-project.release"  depends = "keros-ant-project.release"/>
+
+
+    <!--
+
+        Will print all properties to the console.
+
+    -->
+    <target  name = "keros-ant-project.print.properties"  description = "Converts Ant scripts to HTML">
+        <echo>
+            ------------------------------------------------------------------
+
+                                KEROS ANT PROPERTIES
+
+            ------------------------------------------------------------------
+
+            keros-ant-project.document.generated.DIR_NAME =  ${keros-ant-project.document.generated.DIR_NAME}
+            keros-ant-project.document.generated.HOME     =  ${keros-ant-project.document.generated.HOME}
+
+            keros-ant-project.document.INCLUDES           =  ${keros-ant-project.document.INCLUDES}
+
+        </echo>
+    </target>
+</project>

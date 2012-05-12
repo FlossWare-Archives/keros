@@ -1,0 +1,314 @@
+/** 
+ *
+ * This parser deals with a source file which contains object refs.
+ *
+ */
+PARSER_BEGIN ( JPlateParser )
+
+package org.jplate.engine.saj.parser;
+
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+
+import org.jplate.JPlateException;
+
+import org.jplate.engine.util.ValidateData;
+
+import org.jplate.engine.saj.builder.JPlateBuilderIfc;
+
+public final class JPlateParser implements JPlateParserIfc
+{
+    /**
+     *
+     * This represents a message stating our reader is null.
+     *
+     */
+    public static final String RAW_JPLATE_IS_NULL_MSG = "rawJPlate == null";
+
+    /**
+     *
+     * This represents a message stating our builder is null.
+     *
+     */
+    public static final String BUILDER_IS_NULL_MSG = "builder == null";
+
+    private void parseJPlateUsingReader
+        ( final Reader rawJPlate, final JPlateBuilderIfc builder )
+            throws JPlateParserException
+    {
+        try
+        {
+			ReInit ( rawJPlate );
+			parse  ( builder   );
+		}
+
+        catch ( final Exception exception )
+        {
+            throw new JPlateParserException ( exception );
+        }
+    }
+
+    /**
+     *
+     * This method will parse jplate templates.
+     *
+     * @param rawJPlate represents a reader who contains JPlate template that
+     *        should be processed.
+     *
+     * @param builder represents the object who will be called as items are
+     *        parsed.
+     *
+     * @throws JPlateException if builder has issue with parsing.
+     *
+     */
+    public void parseJPlate
+        ( final Reader rawJPlate, final JPlateBuilderIfc builder )
+            throws JPlateParserException
+    {
+        ValidateData.ensureNotNull ( RAW_JPLATE_IS_NULL_MSG, rawJPlate );
+        ValidateData.ensureNotNull ( BUILDER_IS_NULL_MSG,    builder   );
+
+        parseJPlateUsingReader ( rawJPlate, builder );
+    }
+
+    /**
+     *
+     * This method will parse jplate templates.
+     *
+     * @param rawJPlate represents a reader who contains JPlate template that
+     *        should be processed.
+     *
+     * @param builder represents the object who will be called as items are
+     *        parsed.
+     *
+     * @throws JPlateException if builder has issue with parsing.
+     *
+     */
+    public void parseJPlate
+        ( final InputStream rawJPlate, final JPlateBuilderIfc builder )
+            throws JPlateParserException
+    {
+        ValidateData.ensureNotNull ( RAW_JPLATE_IS_NULL_MSG, rawJPlate );
+        ValidateData.ensureNotNull ( BUILDER_IS_NULL_MSG,    builder   );
+
+        try
+        {
+			ReInit ( rawJPlate );
+            parse  ( builder   );
+        }
+
+        catch ( final Exception exception )
+        {
+            throw new JPlateParserException ( exception );
+        }
+    }
+
+    /**
+     *
+     * This method will parse jplate templates.
+     *
+     * @param rawJPlate represents a reader who contains JPlate template that
+     *        should be processed.
+     *
+     * @param builder represents the object who will be called as items are
+     *        parsed.
+     *
+     * @throws JPlateException if builder has issue with parsing.
+     *
+     */
+    public void parseJPlate
+        ( final String rawJPlate, final JPlateBuilderIfc builder )
+            throws JPlateParserException
+    {
+        ValidateData.ensureNotNull ( RAW_JPLATE_IS_NULL_MSG, rawJPlate );
+        ValidateData.ensureNotNull ( BUILDER_IS_NULL_MSG,    builder   );
+
+        parseJPlateUsingReader ( new StringReader ( rawJPlate ), builder );
+    }
+}
+
+PARSER_END ( JPlateParser )
+
+TOKEN:
+{
+        <  DOLLAR_LCURLY_SLASH:         ( "${/" ) > : JPLATE_TOKEN
+    |
+        <  DOLLAR_LCURLY:               ( "${" ) > : JPLATE_TOKEN
+    |
+        <  TEXT:                     ( ( ~[ "$" ] )+ | "$" ) > 
+}
+
+<JPLATE_TOKEN> SKIP:
+{
+    "\t" | "\n" | "\r" | " "
+}
+
+
+<JPLATE_TOKEN> TOKEN:
+{
+        < #DIGIT:           ( [ "0" - "9" ] ) >
+    |
+        < #LETTER:          ( [ "A" - "Z", "a" - "z" ] ) >
+    |
+        < #VALID_IDENTS:    (  "." | "_" | "-" | <LETTER> | <DIGIT> ) >
+    |
+        <  JPLATE_IDENT:    ( <LETTER> ( <VALID_IDENTS> )* ) >
+    |
+        <  SLASH_RCURLY:    ( "/}" ) > : DEFAULT
+    |
+        <  RCURLY:          ( "}" ) > : DEFAULT
+    |
+        <  EQUALS_QUOTE:    "=\"" > : VALUE_TOKEN
+}
+
+<VALUE_TOKEN> TOKEN:
+{
+        <  QUOTE:           "\"" > : JPLATE_TOKEN
+    |
+        <  VALUE:           ( ~[ "\"" ] )+ >
+}
+
+void parse ( final JPlateBuilderIfc builder )
+    throws IOException, ParseException, JPlateException:
+{
+    Token eofToken;
+    builder.buildStart ();
+}
+
+{
+    (
+        processName ( builder )
+        |
+        processText ( builder )
+    )+
+
+    eofToken = <EOF>
+    {
+        builder.buildEnd ( eofToken.endLine, eofToken.endColumn );
+    }
+}
+
+void processText ( final JPlateBuilderIfc builder )
+    throws IOException, ParseException, JPlateException:
+{
+    Token textToken;
+}
+
+{
+    textToken = <TEXT>
+    {
+        builder.buildText
+        (
+            textToken.image, textToken.beginLine, textToken.beginColumn
+        );
+    }
+}
+
+void processName ( final JPlateBuilderIfc builder )
+    throws IOException, ParseException, JPlateException:
+{
+}
+
+{
+    processNameEnd ( builder )
+    |
+    processNameStart ( builder )
+}
+
+void processNameEnd ( final JPlateBuilderIfc builder )
+    throws IOException, ParseException, JPlateException:
+{
+    Token nameToken;
+}
+
+{
+    <DOLLAR_LCURLY_SLASH> 
+
+    nameToken = <JPLATE_IDENT>
+    {
+        builder.buildNameEnd
+        (
+            nameToken.image, nameToken.beginLine, nameToken.beginColumn
+        );
+    }
+
+    <RCURLY>
+}
+
+void processNameStart ( final JPlateBuilderIfc builder )
+    throws IOException, ParseException, JPlateException:
+{
+    Token nameToken;
+
+    String name        = "";
+    int    beginLine   = 0;
+    int    beginColumn = 0;
+}
+
+{
+    <DOLLAR_LCURLY>
+
+    nameToken = <JPLATE_IDENT>
+    {
+        name        = nameToken.image;
+        beginLine   = nameToken.beginLine;
+        beginColumn = nameToken.beginColumn;
+
+        builder.buildNameStart ( name, beginLine, beginColumn );
+    }
+
+    processAttributes ( builder )
+
+    (
+        <RCURLY>
+        |
+        <SLASH_RCURLY>
+        {
+            builder.buildNameEnd ( name, beginLine, beginColumn );
+        }
+    )
+}
+
+void processAttributes ( final JPlateBuilderIfc builder )
+    throws IOException, ParseException, JPlateException:
+{
+    Token  nameToken;
+    Token  valueToken;
+    String value;
+}
+
+{
+    (
+        nameToken = <JPLATE_IDENT>
+        {
+            builder.buildAttributeName
+            (
+                nameToken.image, nameToken.beginLine, nameToken.beginColumn
+            );
+        }
+        (
+            valueToken = <EQUALS_QUOTE>
+            {
+                value = "";
+            }
+            
+            (
+                valueToken = <VALUE>
+                {
+                    value = valueToken.image;
+                }
+            )? 
+            
+            <QUOTE>
+            {
+                builder.buildAttributeValue
+                (
+                    value, valueToken.beginLine, valueToken.beginColumn
+                );
+            }
+        )?
+    )*
+}
+

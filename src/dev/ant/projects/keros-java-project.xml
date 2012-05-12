@@ -1,0 +1,277 @@
+<!--
+
+    For Java projects...
+
+    Modifications:
+        $Date: 2010-02-17 12:46:45 -0500 (Wed, 17 Feb 2010) $
+        $Revision: 220 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/projects/keros-java-project.xml $
+        
+-->
+<project
+    name                = "keros-java-project"
+    default             = "keros-java-project.all"
+    
+    xmlns:ant-contrib        = "http://ant-contrib.sourceforge.net" 
+    xmlns:keros-base-project = "http://keros.sourceforge.net/project"
+    xmlns:keros-java-project = "http://keros.sourceforge.net/project/java"
+    xmlns:keros              = "http://keros.sourceforge.net">
+
+
+    <description>
+        Keros Java related project work...
+    </description>
+
+
+    <!--
+
+        Imports...
+
+    -->
+    <import  file = "keros-source-project.xml"  description = "Contains Keros project functionality."/>
+
+
+    <!--
+
+      ========================================================================
+                                      Java Targets
+      ========================================================================
+
+    -->
+
+    <!--
+
+        Generated sub-directories...
+
+    -->
+    <keros:auto-property  property = "keros-java-project.classes.DIR_NAME"       default = "classes"/>
+    <keros:auto-property  property = "keros-java-project.classes.HOME"           default = "${keros-base-project.generated.HOME}/${keros-java-project.classes.DIR_NAME}"/>
+
+    <keros:auto-property  property = "keros-java-project.test.classes.DIR_NAME"  default = "test-classes"/>
+    <keros:auto-property  property = "keros-java-project.test.classes.HOME"      default = "${keros-base-project.generated.HOME}/${keros-java-project.test.classes.DIR_NAME}"/>
+
+    <!--
+
+        This target cleans up the build area...
+
+	-->
+	<target  name = "keros-java-project.clean"  description = "Clean up java build">
+		<delete  dir = "${keros-java-project.classes.HOME}"/>
+		<delete  dir = "${keros-java-project.test.classes.HOME}"/>
+	</target>
+
+
+	<!--
+
+        This target will create the appropriate directories...
+
+	-->
+	<target  name = "keros-java-project.create.build-dirs"  description = "Create java build directories">
+		<mkdir  dir = "${keros-java-project.classes.HOME}"/>
+        <mkdir  dir = "${keros-java-project.test.classes.HOME}"/>
+    </target>
+
+
+    <!-- ======================================================================== -->
+
+    <keros:auto-property  property = "keros-java-project.source.DIR_NAME"  default = "java"/>
+    <keros:auto-property  property = "keros-java-project.source.HOME"      default = "${keros-base-project.dev.HOME}/${keros-java-project.source.DIR_NAME}"/>
+
+    <keros:if-dir-exists  dir = "${keros-java-project.source.HOME}">
+        <keros:then>
+            <keros:conditional-set-property  name = "keros-java-project.source.PATH"  property = "keros-java-project.source.PATH"  set = "${keros-java-project.source.PATH}:${keros-java-project.source.HOME}"  unset = "${keros-java-project.source.HOME}"  is-warnable = "false"/>
+        </keros:then>
+    </keros:if-dir-exists>
+
+    <keros:if-dir-exists  dir = "${keros-base-project.lib.HOME}">
+        <keros:then>
+            <path  id = "keros-java-project.CLASS_PATH_REF_ID">
+                <pathelement  location = "${keros-java-project.classes.HOME}"/>
+
+                <fileset  dir = "${keros-base-project.lib.HOME}"  includes = "${keros-base-project.lib.INCLUDES}"/>
+            </path>
+        </keros:then>
+        <keros:else>
+            <path  id = "keros-java-project.CLASS_PATH_REF_ID">
+                <pathelement  location = "${keros-java-project.classes.HOME}"/>
+            </path>
+        </keros:else>
+    </keros:if-dir-exists>
+    
+
+    <!--
+
+        Provides default logic for compiling Java source...
+
+    -->
+    <target  name = "keros-java-project.compile"  unless = "keros-java-project.compile.SKIP"  description = "Called to generate">
+        <mkdir  dir = "${keros-java-project.classes.HOME}"/>
+
+        <javac  srcdir = "${keros-java-project.source.PATH}"  sourcepath = "${keros-java-project.source.PATH}"  destdir = "${keros-java-project.classes.HOME}"  debug = "true">
+            <classpath    refid = "keros-java-project.CLASS_PATH_REF_ID"/>
+            <compilerarg  value = "-Xlint:unchecked"/>
+        </javac>
+    </target>
+
+
+    <!-- ======================================================================== -->
+
+    <keros:auto-property  property = "keros-java-project.test.source.DIR_NAME"  default = "java"/>
+    <keros:auto-property  property = "keros-java-project.test.source.HOME"      default = "${keros-base-project.test.HOME}/${keros-java-project.test.source.DIR_NAME}"/>
+
+    <path  id = "keros-java-project.test.CLASS_PATH_REF_ID"  description = "Java test class path">
+        <path  refid = "keros-java-project.CLASS_PATH_REF_ID"/>
+
+        <pathelement  location = "${keros-java-project.test.classes.HOME}"/>
+    </path>
+
+
+	<!--
+
+        This task will compile all java test source...
+
+	-->
+	<target  name = "keros-java-project.compile.test"  unless = "keros-java-project.compile.test.SKIP"  if = "keros-java-project.test.source.PATH"  description = "Compile java test source"> 
+        <javac  sourcedir = "${keros-java-project.test.source.HOME}"  sourcepath = "${keros-java-project.test.source.PATH}"  destdir = "${keros-java-project.test.classes.HOME}"  debug = "true">
+            <classpath    refid = "keros-java-project.test.CLASS_PATH_REF_ID"/>
+            <compilerarg  value = "-Xlint:unchecked"/>
+        </javac>
+	</target>
+
+    <!-- ======================================================================== -->
+
+
+    <!--
+
+        This task will test Java...
+
+    -->
+    <target  name = "keros-java-project.test"  depends = "keros-java-project.compile.test"  description = "Test Java"/> 
+
+    <!-- ======================================================================== -->
+
+    <!--
+
+        If a release version has been defined, we will set our default
+        release source name to be the project name PLUS the version
+        number...  otherwise its just the project directory name.
+
+    -->
+    <ant-contrib:if>
+        <not>
+            <isset  property = "keros-java-project.jar.FILE_NAME"/>
+        </not>
+
+        <ant-contrib:then>
+            <keros:conditional-set-property  property = "keros-java-project.release.VERSION"  name = "keros-java-project.jar.FILE_NAME"  set = "${keros-base-project.DIR_NAME}-${keros-base-project.release.VERSION}"  unset = "${keros-base-project.DIR_NAME}"/>
+
+            <keros:conditional-set-property  property = "keros-java-project.release.PREFIX"   name = "keros-java-project.jar.FILE_NAME"  set = "${keros-java-project.release.PREFIX}${keros-java-project.jar.FILE_NAME}"  unset = "${keros-java-project.jar.FILE_NAME}"/>
+
+            <keros:conditional-set-property  property = "keros-java-project.release.POSTFIX"  name = "keros-java-project.jar.FILE_NAME"  set = "${keros-java-project.jar.FILE_NAME}${keros-base-project.release.POSTFIX}.jar"  unset = "${keros-java-project.jar.FILE_NAME}.jar"/>
+        </ant-contrib:then>
+    </ant-contrib:if>
+
+
+	<!--
+
+        This task will jar java...
+
+	-->
+    <target  name = "keros-java-project.library"  unless = "keros-java-project.library.SKIP"  depends = "keros-java-project.compile"  description = "Default processing to jar Java">
+        <mkdir  dir = "${keros-base-project.release.HOME}"/>
+        <jar  destfile = "${keros-base-project.release.HOME}/${keros-java-project.jar.FILE_NAME}"  basedir = "${keros-java-project.classes.HOME}"/>
+    </target>
+
+    <!-- ======================================================================== -->
+
+    <!--
+
+        Java documentation properties.
+
+    -->
+    <keros:auto-property  property = "keros-java-project.document.project.NAME"        default = "Java Project"/>
+
+    <keros:auto-property  property = "keros-java-project.document.generated.DIR_NAME"  default = "java"/>
+    <keros:auto-property  property = "keros-java-project.document.generated.HOME"      default = "${keros-document-project.generated.HOME}/${keros-java-project.document.generated.DIR_NAME}"/>
+
+    <keros:auto-property  property = "keros-java-project.document.PACKAGE_NAMES"       default = "*"/>
+
+    <keros:auto-property  property = "keros-java-project.document.OVERVIEW_FILE_NAME"  default = "overview.html"/>
+    <keros:auto-property  property = "keros-java-project.document.OVERVIEW_HOME"       default = "${keros-java-project.source.HOME}"/>
+    <keros:auto-property  property = "keros-java-project.document.OVERVIEW_FILE"       default = "${keros-java-project.document.OVERVIEW_HOME}/${keros-java-project.document.OVERVIEW_FILE_NAME}"/>
+
+	<!--
+
+        This task will java document source...
+
+	-->
+    <target  name = "keros-java-project.document"  unless = "keros-java-project.document.SKIP"  description = "Document java source"> 
+        <javadoc  sourcepath   = "${keros-java-project.source.PATH}"
+                  classpathref = "keros-java-project.CLASS_PATH_REF_ID"
+                  destdir      = "${keros-java-project.document.generated.HOME}"
+                  packagenames = "${keros-java-project.document.PACKAGE_NAMES}"
+                  author       = "true"
+                  private      = "true"
+                  windowtitle  = "${keros-java-project.document.project.NAME}"
+                  overview     = "${keros-java-project.document.OVERVIEW_FILE}"/>
+	</target>
+
+    <!-- ======================================================================== -->
+
+    <target  name = "keros-java-project.release"  depends = "keros-java-project.compile, keros-java-project.compile.test, keros-java-project.test, keros-java-project.library, keros-java-project.document, keros-java-project.test"  description = "Build Java project"/>
+
+    <!-- ======================================================================== -->
+
+    <target  name = "keros-base-project.library"  depends = "keros-java-project.library"  description = "Create a Java jar"/>
+
+    <target  name = "keros-base-project.compile"  depends = "keros-java-project.compile"/>
+
+    <target  name = "keros-base-project.document"  depends = "keros-java-project.document"/>
+
+    <target  name = "keros-base-project.release"  depends = "keros-java-project.release"/>
+
+
+    <!--
+
+        Will print all properties to the console.
+
+    -->
+    <target  name = "keros-java-project.print.properties"  description = "Converts Ant scripts to HTML">
+        <echo>
+            ------------------------------------------------------------------
+
+                                KEROS ENVIRONMENT PROPERTIES
+
+            ------------------------------------------------------------------
+
+            keros-java-project.project.NAME                    =  ${keros-java-project.project.NAME}
+
+            keros-java-project.classes.DIR_NAME                =  ${keros-java-project.classes.DIR_NAME}
+            keros-java-project.classes.HOME                    =  ${keros-java-project.classes.HOME}
+
+            keros-java-project.test.classes.DIR_NAME           =  ${keros-java-project.test.classes.DIR_NAME}
+            keros-java-project.test.classes.HOME               =  ${keros-java-project.test.classes.HOME}
+
+            keros-java-project.source.DIR_NAME                 =  ${keros-java-project.source.DIR_NAME}
+            keros-java-project.source.HOME                     =  ${keros-java-project.source.HOME}
+
+            keros-java-project.test.source.DIR_NAME            =  ${keros-java-project.test.source.DIR_NAME}
+            keros-java-project.test.source.HOME                =  ${keros-java-project.test.source.HOME}
+
+            keros-java-project.jar.FILE_NAME                   =  ${keros-java-project.jar.FILE_NAME}
+
+            keros-java-project.document.generated.DIR_NAME     =  ${keros-java-project.document.generated.DIR_NAME}
+            keros-java-project.document.generated.HOME         =  ${keros-java-project.document.generated.HOME}
+
+            keros-java-project.document.PACKAGE_NAMES          =  ${keros-java-project.document.PACKAGE_NAMES}
+
+            keros-java-project.document.OVERVIEW_FILE_NAME     =  ${keros-java-project.document.OVERVIEW_FILE_NAME}
+            keros-java-project.document.OVERVIEW_HOME          =  ${keros-java-project.document.OVERVIEW_HOME}
+            keros-java-project.document.OVERVIEW_FILE          =  ${keros-java-project.document.OVERVIEW_FILE}
+
+            keros-java-project.source.PATH                     =  ${keros-java-project.source.PATH}
+            keros-java-project.test.source.PATH                =  ${keros-java-project.test.source.PATH}
+        </echo>
+    </target>
+</project>

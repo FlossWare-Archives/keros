@@ -1,0 +1,6 @@
+<ivy-module  version = "2.0">
+    <info  organisation = "Keros"  module = "JavaCC"/>
+    <dependencies>
+        <dependency  org = "net.java.dev.javacc"  name = "javacc"  rev = "4.0"/>
+    </dependencies>
+</ivy-module>

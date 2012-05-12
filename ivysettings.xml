@@ -1,0 +1,23 @@
+<ivysettings>
+    <settings  defaultResolver="keros-chain"/>
+    <resolvers>
+        <chain  name = "keros-chain"  returnFirst = "true">
+            <!--
+            <packager name="roundup" buildRoot="${user.home}/.ivy2/packager/build" resourceCache="${user.home}/.ivy2/packager/cache">
+                <ivy pattern="http://ivyroundup.googlecode.com/svn/trunk/repo/modules/[organisation]/[module]/[revision]/ivy.xml"/>
+                <artifact pattern="http://ivyroundup.googlecode.com/svn/trunk/repo/modules/[organisation]/[module]/[revision]/packager.xml"/>
+            </packager>
+            -->
+            <url  name = "roundup"  m2compatible = "yes">
+                <ivy  pattern = "http://ivyroundup.googlecode.com/svn/trunk/repo/modules/[organisation]/[module]/[revision]/ivy.xml"/>
+                <artifact  pattern = "http://ivyroundup.googlecode.com/svn/trunk/repo/modules/[organisation]/[module]/[revision]/packager.xml"/>
+            </url>
+            <url  name = "repo1" m2compatible="yes">
+                <ivy pattern="http://repo1.maven.org/maven2/[organisation]/[module]/[revision]/ivy.xml"/>
+                <artifact  pattern = "http://repo1.maven.org/maven2/[module]/[revision]/[artifact]-[revision].[ext]"/>
+            </url>
+            <ibiblio name="maven2" m2compatible="true"/>
+        </chain>
+    </resolvers>
+</ivysettings>
+

@@ -1,0 +1,2019 @@
+<!--
+
+    Tests Keros functionality.
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/test/ant/test-keros.xml $
+
+-->
+<project
+    name                       = "test-keros"
+    default                    = "test-keros"
+    xmlns:ant-contrib          = "http://ant-contrib.sourceforge.net"
+    xmlns:find-bugs            = "http://findbugs.sourceforge.net"
+    xmlns:keros                = "http://keros.sourceforge.net"
+    xmlns:keros-javacc-project = "http://keros.sourceforge.net/project/javacc">
+
+    <description>This tests standard Keros functionaltiy</description>
+
+    <import  file = "../../dev/ant/projects/keros-javacc-project.xml"/>
+    <import  file = "../../dev/ant/projects/keros-findbugs-project.xml"/>
+
+
+    <!-- 
+
+        Directory locations
+
+    -->
+    <dirname  property = "test-keros.HOME"                 file  = "${ant.file.test-keros}"/>
+    <dirname  property = "test-keros.test.HOME"            file  = "${test-keros.HOME}"/>
+    <property name     = "test-keros.test.resources.HOME"  value = "${test-keros.test.HOME}/resources"/>
+    <dirname  property = "test-keros.keros.HOME"           file  = "${test-keros.test.HOME}"/>
+    <property name     = "test-keros.dev.src.HOME"         value = "${test-keros.keros.HOME}/dev"/>
+    <property name     = "test-keros.ant.src.HOME"         value = "${test-keros.dev.src.HOME}/ant"/>
+
+
+    <!-- 
+
+        Imports...
+
+    -->
+    <import  file = "${test-keros.ant.src.HOME}/keros.xml"/>
+
+
+    <property  name = "test-keros.state.HOME"      value = "${keros.state.HOME}/test-keros"/>
+    <property  name = "test-keros.unpack.HOME"     value = "${test-keros.state.HOME}/unpack"/>
+    <property  name = "test-keros.tar.HOME"        value = "${test-keros.state.HOME}/tar"/>
+    <property  name = "test-keros.bz2.HOME"        value = "${test-keros.state.HOME}/bz2"/>
+    <property  name = "test-keros.gz.HOME"         value = "${test-keros.state.HOME}/gzip"/>
+    <property  name = "test-keros.zip.HOME"        value = "${test-keros.state.HOME}/zip"/>
+    <property  name = "test-keros.find-bugs.HOME"  value = "${test-keros.state.HOME}/find-bugs"/>
+    <property  name = "test-keros.javacc.HOME"     value = "${test-keros.state.HOME}/javacc"/>
+
+
+    <!--
+
+        This target tests the property default macrodef.
+
+    -->
+    <target  name = "test-property-default">
+        <property  name = "test-keros.test-property-default.VAR1"  value = "VALUE_ONE"/>
+
+        <keros:property-default  name = "test-keros.test-property-default.VAR1"  default-value = "VALUE1"/>
+        <keros:property-default  name = "test-keros.test-property-default.VAR2"  default-value = "VALUE2"/>
+
+        <fail>
+            <condition>
+                <equals  arg1 = "${test-keros.test-property-default.VAR1}"  arg2 = "VALUE1"/>
+            </condition>
+        </fail>
+
+        <fail>
+            <condition>
+                <not>
+                    <equals  arg1 = "${test-keros.test-property-default.VAR2}"  arg2 = "VALUE2"/>
+                </not>
+            </condition>
+        </fail>
+    </target>
+
+
+    <!--
+
+        This target tests file sorting...
+
+    -->
+    <target  name = "test-sort-files">
+        <ant-contrib:trycatch  property = "test-keros.test-sort-files.ERROR_MSG">
+            <ant-contrib:try>
+                <mkdir  dir = "${test-keros.state.HOME}/test-keros.test-sort-files"/>
+
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files/1.txt"/>
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files/10.txt"/>
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files/11.txt"/>
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files/2.txt"/>
+
+                <keros:sort-files  dir = "${test-keros.state.HOME}/test-keros.test-sort-files"  property = "test-keros.test-sort-files"/>
+
+                <keros:assert-equal  str1 = "${test-keros.test-sort-files}"  str2 = "1.txt,2.txt,10.txt,11.txt"  error-msg = "Expected [1.txt,2.txt,10.txt,11.txt] but got [${test-keros.test-sort-files}]"/>
+
+                <delete  dir = "${test-keros.state.HOME}/test-keros.test-sort-files"/>
+                <mkdir  dir = "${test-keros.state.HOME}/test-keros.test-sort-files"/>
+
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files/1.txt"/>
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files/10.txt"/>
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files/11.txt"/>
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files/02.txt"/>
+
+                <keros:sort-files  dir = "${test-keros.state.HOME}/test-keros.test-sort-files"  property = "test-keros.test-sort-files"  padding = "0"/>
+
+                <keros:assert-equal  str1 = "${test-keros.test-sort-files}"  str2 = "1.txt,02.txt,10.txt,11.txt"  error-msg = "Expected [1.txt,02.txt,10.txt,11.txt] but got [${test-keros.test-sort-files}]"/>
+                <delete  dir = "${test-keros.state.HOME}/test-keros.test-sort-files"/>
+
+                <touch  file = "${test-keros.state.HOME}/test-keros.test-sort-files-1.txt"/>
+                <keros:sort-files  dir = "${test-keros.state.HOME}/test-keros.test-sort-files-1.txt"  property = "test-keros.test-sort-files"/>
+
+                <delete  file = "${test-keros.state.HOME}/test-keros.test-sort-files-1.txt"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "${test-keros.test-sort-files.ERROR_MSG}"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <delete  dir  = "${test-keros.state.HOME}/test-keros.test-sort-files"/>
+                <delete  file = "${test-keros.state.HOME}/test-keros.test-sort-files-1.txt"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        This target tests computing the local.
+
+    -->
+    <target  name = "test-compute-locale">
+        <keros:compute-locale  property = "test-keros.LOCALE"  description = "Our current locale"/>
+
+        <fail>
+            <condition>
+                <not>
+                    <isset  property = "test-keros.LOCALE"/>
+                </not>
+            </condition>
+        </fail>
+    </target>
+
+
+
+    <!--
+
+        Test computing class branch.
+
+    -->
+    <target  name = "test-compute-class-branch">
+        <keros:compute-class-branch  class-name = "com.foo.bar.Alpha"  property = "test-keros.COMPUTE_CLASS_BRANCH"/>
+
+        <keros:assert-not-equal  str1 = "com.foo.bar.Alpha"  str2 = "${test-keros.COMPUTE_CLASS_BRANCH}"/>
+        <keros:assert-not-equal  str1 = "com.foo.bar"        str2 = "${test-keros.COMPUTE_CLASS_BRANCH}"/>
+        <keros:assert-equal      str1 = "com${file.separator}foo${file.separator}bar${file.separator}Alpha"  str2 = "${test-keros.COMPUTE_CLASS_BRANCH}"/>
+    </target>
+
+
+    <!--
+
+        Test computing class info.
+
+    -->
+    <target  name = "test-compute-class-info">
+        <keros:compute-class-info  class-name = "com.foo.bar.Alpha"  dir-property = "DIR_NAME"  file-property = "FILE_NAME"/>
+
+        <keros:assert-not-equal  str1 = "com.foo.bar.Alpha"  str2 = "${DIR_NAME}"/>
+        <keros:assert-not-equal  str1 = "com.foo.bar"        str2 = "${DIR_NAME}"/>
+        <keros:assert-equal      str1 = "com${file.separator}foo${file.separator}bar"  str2 = "${DIR_NAME}"/>
+
+        <keros:assert-not-equal  str1 = "com.foo.bar.Alpha"       str2 = "${FILE_NAME}"/>
+        <keros:assert-not-equal  str1 = "com.foo.bar"             str2 = "${FILE_NAME}"/>
+        <keros:assert-not-equal  str1 = "${file.separator}Alpha"  str2 = "${FILE_NAME}"/>
+        <keros:assert-equal      str1 = "Alpha"                   str2 = "${FILE_NAME}"/>
+    </target>
+
+
+    <!--
+
+        Test replacing url
+
+    -->
+    <target  name = "test-replace-url">
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <mkdir  dir = "${test-keros.state.HOME}/test-replace-uri"/>
+
+                <copy  file = "../resources/urls.properties"  todir = "${test-keros.state.HOME}/test-replace-uri"/>
+
+                <keros:replace-url  file = "${test-keros.state.HOME}/test-replace-uri/urls.properties"/>
+
+                <ant-contrib:var  name = "test-replace-url.hyper-text"     unset = "true"/>
+                <ant-contrib:var  name = "test-replace-url.file-transfer"  unset = "true"/>
+
+                <loadproperties  srcFile = "${test-keros.state.HOME}/test-replace-uri/urls.properties"/>
+
+                <keros:assert-equal  str1 =  "${test-replace-url.hyper-text}"     str2 = "&lt;a href = &quot;http://foobar.alpha.com&quot;&gt;http://foobar.alpha.com&lt;/a&gt;"/>
+                <keros:assert-equal  str1 =  "${test-replace-url.file-transfer}"  str2 = "&lt;a href = &quot;ftp://this.is.keros.com&quot;&gt;ftp://this.is.keros.com&lt;/a&gt;"/>
+            </ant-contrib:try>
+
+            <ant-contrib:finally>
+                <delete  dir = "${test-keros.state.HOME}/test-replace-uri"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+
+    <!--
+
+        Test ensures dir exists.
+
+    -->
+    <target  name = "test-assert-dir-exists">
+        <keros:compute-timestamp  property = "GOOD_TEST_DIR_NAME"   prefix = "GOOD_TEST_"/>
+        <keros:compute-timestamp  property = "BAD_TEST_DIR_NAME"    prefix = "BAD_TEST_"/>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <mkdir  dir = "${test-keros.state.HOME}/${GOOD_TEST_DIR_NAME}"/>
+
+                <keros:assert-dir-exists  dir = "${test-keros.state.HOME}/${GOOD_TEST_DIR_NAME}"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <ant-contrib:var  name = "test-keros.ASSERT_DIR_EXISTS"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <delete  dir = "${test-keros.state.HOME}/${GOOD_TEST_DIR_NAME}"/>
+
+                <ant-contrib:if>
+                    <isset  property = "test-keros.ASSERT_DIR_EXISTS"/>
+
+                    <ant-contrib:then>
+                        <fail  message = "Directory exists but failure did OCCUR"/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-dir-exists  dir = "${test-keros.state.HOME}/${BAD_TEST_DIR_NAME}"/>
+
+                <ant-contrib:var  name = "test-keros.ASSERT_DIR_EXISTS"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <ant-contrib:if>
+                    <isset  property = "test-keros.ASSERT_DIR_EXISTS"/>
+
+                    <ant-contrib:then>
+                        <fail  message = "Directory DOES NOT exist but failure did not occur"/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test ensures file exists.
+
+    -->
+    <target  name = "test-assert-file-exists">
+        <keros:compute-timestamp  property = "GOOD_TEST_DIR_NAME"   prefix = "GOOD_TEST_"/>
+        <keros:compute-timestamp  property = "BAD_TEST_DIR_NAME"    prefix = "BAD_TEST_"/>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <mkdir  dir  = "${test-keros.state.HOME}/${GOOD_TEST_DIR_NAME}"/>
+                <touch  file = "${test-keros.state.HOME}/${GOOD_TEST_DIR_NAME}/foo.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${GOOD_TEST_DIR_NAME}/foo.txt"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <ant-contrib:var  name = "test-keros.ASSERT_FILE_EXISTS"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <ant-contrib:if>
+                    <isset  property = "test-keros.ASSERT_FILE_EXISTS"/>
+
+                    <ant-contrib:then>
+                        <fail  message = "File exists but failure OCCURRED"/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+
+                <delete  dir = "${test-keros.state.HOME}/${GOOD_TEST_DIR_NAME}"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-dir-exists  file = "${test-keros.state.HOME}/${BAD_TEST_DIR_NAME}/foo.txt"/>
+                <ant-contrib:var  name = "test-keros.ASSERT_FILE_EXISTS"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <ant-contrib:if>
+                    <isset  property = "test-keros.ASSERT_FILE_EXISTS"/>
+
+                    <ant-contrib:then>
+                        <fail  message = "File does NOT exist and no failure OCCURRED"/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test branch.
+
+    -->
+    <target  name = "test-compute-branch">
+        <keros:compute-branch  root = "/foo"  full-path = "/foo/bar/alpha"  property = "test-keros.COMPUTE_BRANCH"/>
+
+        <keros:assert-equal  str1 = "${test-keros.COMPUTE_BRANCH}"  str2 = "bar/alpha"  error-msg = "Property, test-keros.COMPUTE_BRANCH, was not computed correctly - ${test-keros.COMPUTE_BRANCH}"/>
+
+        <keros:compute-branch  root = "/theta"  full-path = "/theta/foo/bar/alpha"  property = "test-keros.COMPUTE_BRANCH"/>
+
+        <keros:assert-equal  str1 = "${test-keros.COMPUTE_BRANCH}"  str2 = "foo/bar/alpha"  error-msg = "Property, test-keros.COMPUTE_BRANCH, was not computed correctly - ${test-keros.COMPUTE_BRANCH}"/>
+
+        <keros:compute-branch  root = "/alpha"  full-path = "/theta/foo/bar/alpha"  property = "test-keros.COMPUTE_BRANCH"/>
+
+        <keros:assert-equal  str1 = "${test-keros.COMPUTE_BRANCH}"  str2 = ""  error-msg = "Property, test-keros.COMPUTE_BRANCH, was not computed correctly - ${test-keros.COMPUTE_BRANCH}"/>
+    </target>
+
+
+    <!--
+
+        Test the auto property.
+
+    -->
+    <target  name = "test-auto-property">
+        <keros:auto-property  property = "test-keros.AUTO_PROPERTY"  default = "test1"/>
+        <keros:auto-property  property = "test-keros.AUTO_PROPERTY"  default = "TEST2"/>
+
+        <keros:assert-not-equal   str1 = "${test-keros.AUTO_PROPERTY}"  str2 = "TEST2"  error-msg = "Property, test-keros.AUTO_PROPERTY, should not have been reset to TEST2"/>
+    </target>
+
+
+    <!--
+
+        Test the set property.
+
+    -->
+    <target  name = "test-set-property">
+        <property  name = "test-keros.SET_PROPERTY"  value = "test-keros.SET_PROPERTY"/>
+
+        <keros:set-property  property = "test-keros.SET_PROPERTY"  value = "test1"  warning-msg = "Value already set"/>
+        <keros:set-property  property = "test-keros.SET_PROPERTY"  value = "TEST2"/>
+
+        <keros:assert-equal   str1 = "${test-keros.SET_PROPERTY}"  str2 = "TEST2"  error-msg = "Property, test-keros.SET_PROPERTY, should not have been set to TEST2"/>
+    </target>
+
+
+    <!--
+    -
+    - Test the conditional set property.
+    -
+    -->
+    <target  name = "test-conditional-set-property">
+        <keros:conditional-set-property  name = "TEST_CONDITION_SET_PROPERTY_NAME_1"  property = "TEST_CONDITION_SET_PROPERTY"   set = "FOO"  unset = "BAR"  is-warnable = "false"/>
+
+        <keros:assert-equal str1 = "${TEST_CONDITION_SET_PROPERTY_NAME_1}"  str2 = "BAR"  error-msg = "TEST_CONDITION_SET_PROPERTY_NAME_1 [${TEST_CONDITION_SET_PROPERTY_NAME_1}] should be BAR!"/>
+
+        <keros:conditional-set-property  name = "TEST_CONDITION_SET_PROPERTY_NAME_2"  property = "TEST_CONDITION_SET_PROPERTY_NAME_1"  set = "FOO"  unset = "BAR"  is-warnable = "false"/>
+
+        <keros:assert-equal str1 = "${TEST_CONDITION_SET_PROPERTY_NAME_2}"  str2 = "FOO"  error-msg = "TEST_CONDITION_SET_PROPERTY_NAME_2 [${TEST_CONDITION_SET_PROPERTY_NAME_2}]  should be FOO!"/>
+    </target>
+
+
+    <!--
+
+        Test the equality set property.
+
+    -->
+    <target  name = "test-equality-set-property">
+        <keros:equality-set-property  name = "TEST_EQUALITY_SET_PROPERTY_NAME_1"  property = "TEST_EQUALITY_SET_PROPERTY"  value = "ALPHA"  equal = "FOO"  unequal = "BAR"  is-warnable = "false"/>
+
+        <keros:assert-equal str1 = "${TEST_EQUALITY_SET_PROPERTY_NAME_1}"  str2 = "BAR"  error-msg = "TEST_EQUALITY_SET_PROPERTY_NAME_1 [${TEST_EQUALITY_SET_PROPERTY_NAME_1}] should be BAR!"/>
+
+        <keros:equality-set-property  name = "TEST_EQUALITY_SET_PROPERTY_NAME_2"  property = "TEST_EQUALITY_SET_PROPERTY_NAME_1"  value = "BAR"  equal = "THETA"  unequal = "BETA"  is-warnable = "false"/>
+
+        <keros:assert-equal str1 = "${TEST_EQUALITY_SET_PROPERTY_NAME_2}"  str2 = "THETA"  error-msg = "TEST_EQUALITY_SET_PROPERTY_NAME_2 [${TEST_EQUALITY_SET_PROPERTY_NAME_2}]  should be THETA!"/>
+    </target>
+
+
+    <!--
+
+        Test to make sure numeric comparions work...
+
+    -->
+    <target  name = "test-for">
+        <ant-contrib:var  name = "TEST_FOR_STR"/>
+
+        <keros:for  property = "TEST_FOR"  start = "0"  end = "5">
+            <ant-contrib:var  name = "TEST_FOR_STR"  value = "${TEST_FOR_STR}L"/>
+        </keros:for>
+
+        <keros:assert-equal str1 = "${TEST_FOR_STR}"  str2 = "LLLLL"  error-msg = "Loop should have concatenated 5 L's  [${TEST_FOR_STR}]"/>
+        <keros:assert-equal str1 = "${TEST_FOR}"      str2 = "5"      error-msg = "Loop should have ended with 5 iterations  [${TEST_FOR}]"/>
+    </target>
+
+
+    <!--
+
+        Test to make sure dir copying works...
+
+    -->
+    <target  name = "test-copy-dir">
+        <keros:compute-timestamp  property = "test-keros.COPY_SRC_DIR"   prefix = "SRC_"/>
+        <keros:compute-timestamp  property = "test-keros.COPY_DEST_DIR"  prefix = "DEST_"/>
+
+        <ant-contrib:trycatch  property = "test-keros.COPY_ERROR_MSG">
+            <ant-contrib:try>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0cc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1cc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2a.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2b.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2c.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3a.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3b.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3c.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3cc.txt"/>
+
+                <keros:copy-dir  src-dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}"  dest-dir = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}"/>
+
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0a"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0b"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0c"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0cc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1cc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir2/file2a.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir2/file2b.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir2/file2c.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/file3a.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/file3b.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/file3c.txt"/>
+
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3a"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3b"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3c"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3cc.txt"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "${test-keros.COPY_ERROR_MSG}"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <delete  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}"/>
+                <delete  dir = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        This tests copying a reference...
+
+    -->
+    <target  name = "test-copy-ref-id">
+        <keros:compute-timestamp  property = "test-keros.COPY_SRC_DIR"   prefix = "SRC_"/>
+        <keros:compute-timestamp  property = "test-keros.COPY_DEST_DIR"  prefix = "DEST_"/>
+
+        <ant-contrib:trycatch  property = "test-keros.COPY_ERROR_MSG">
+            <ant-contrib:try>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0cc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1cc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2a.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2b.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2c.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3a.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3b.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3c.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3cc.txt"/>
+
+                <path  id = "test-keros.COPY_SUB_REF_ID">
+                    <pathelement  location = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0"/>
+                </path>
+
+                <path  id = "test-keros.COPY_MAIN_REF_ID">
+                    <path  refid = "test-keros.COPY_SUB_REF_ID"/>
+
+                    <fileset  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1">
+                        <include  name = "**/*.txt"/>
+                    </fileset>
+
+                    <pathelement  location = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2"/>
+
+                    <pathelement  location = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3"/>
+                </path>
+
+                <keros:copy-ref-id  src-ref-id = "test-keros.COPY_MAIN_REF_ID"  dest-dir = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}"/>
+
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0a"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0b"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0c"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0a/file0aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0a/file0ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0a/file0ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0b/file0ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0b/file0bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0b/file0bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0c/file0ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0c/file0cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0c/file0cc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1cc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir2/file2a.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir2/file2b.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir2/file2c.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/file3a.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/file3b.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/file3c.txt"/>
+
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3a"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3b"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3c"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3a/file3aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3a/file3ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3a/file3ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3b/file3ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3b/file3bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3b/file3bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3c/file3ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3c/file3cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3c/file3cc.txt"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "${test-keros.COPY_ERROR_MSG}"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <delete  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}"/>
+                <delete  dir = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Tests copying...
+
+    -->
+    <target  name = "test-copy">
+        <keros:compute-timestamp  property = "test-keros.COPY_SRC_DIR"   prefix = "SRC_"/>
+        <keros:compute-timestamp  property = "test-keros.COPY_DEST_DIR"  prefix = "DEST_"/>
+
+        <ant-contrib:trycatch  property = "test-keros.COPY_ERROR_MSG">
+            <ant-contrib:try>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2"/>
+
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b"/>
+                <mkdir  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0a/file0ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0b/file0bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0/dir0c/file0cc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1a/file1ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1c/file1cc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1/dir1b/file1bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2a.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2b.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2/file2c.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3a.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3b.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/file3c.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3aa.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3ab.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3a/file3ac.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3ba.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3bb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3b/file3bc.txt"/>
+
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3ca.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3cb.txt"/>
+                <touch  file = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3/dir3c/file3cc.txt"/>
+
+                <path  id = "test-keros.COPY_SUB_REF_ID">
+                    <pathelement  location = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir0"/>
+                </path>
+
+                <path  id = "test-keros.COPY_MAIN_REF_ID">
+                    <path  refid = "test-keros.COPY_SUB_REF_ID"/>
+
+                    <fileset  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir1">
+                        <include  name = "**/*.txt"/>
+                    </fileset>
+
+                    <pathelement  location = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir2"/>
+
+                    <pathelement  location = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}/dir3"/>
+                </path>
+
+                <keros:copy  src = "test-keros.COPY_MAIN_REF_ID"  dest-dir = "${test-keros.state.HOME}/$${test-keros.COPY_DEST_DIR}"/>
+
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0a"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0b"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0c"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0a/file0aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0a/file0ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0a/file0ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0b/file0ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0b/file0bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0b/file0bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0c/file0ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0c/file0cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir0/dir0c/file0cc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/file1cc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir2/file2a.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir2/file2b.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir2/file2c.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/file3a.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/file3b.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/file3c.txt"/>
+
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3a"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3b"/>
+                <keros:assert-dir-exists   dir  = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3c"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3a/file3aa.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3a/file3ab.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3a/file3ac.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3b/file3ba.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3b/file3bb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3b/file3bc.txt"/>
+
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3c/file3ca.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3c/file3cb.txt"/>
+                <keros:assert-file-exists  file = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}/dir3/dir3c/file3cc.txt"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "${test-keros.COPY_ERROR_MSG}"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <delete  dir = "${test-keros.state.HOME}/${test-keros.COPY_SRC_DIR}"/>
+                <delete  dir = "${test-keros.state.HOME}/${test-keros.COPY_DEST_DIR}"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Tests loading a file...
+
+    -->
+    <target  name = "test-load-file">
+        <keros:load-file  src-file = "${test-keros.test.resources.HOME}/load-file-test2.txt"  property = "test-keros.LOAD_FILE_CTRL"/>
+        <keros:load-file  src-file = "${test-keros.test.resources.HOME}/load-file-test1.txt"  property = "test-keros.LOAD_FILE"/>
+        <keros:load-file  src-file = "${test-keros.test.resources.HOME}/load-file-test2.txt"  property = "test-keros.LOAD_FILE"/>
+
+        <keros:assert-equal  str1 = "${test-keros.LOAD_FILE_CTRL}"  str2 = "${test-keros.LOAD_FILE}"/>
+    </target>
+
+
+    <!--
+
+        Tests if-dir-exists macro...
+
+    -->
+    <target  name = "test-if-dir-exists">
+        <keros:compute-timestamp  property = "test-keros.DIR_NAME"   prefix = "IF_DIR_EXISTS_TEST_"/>
+
+        <delete  dir = "${test-keros.state.HOME}/${test-keros.DIR_NAME}"/>
+
+        <keros:if-dir-exists  dir = "${test-keros.state.HOME}/${test-keros.DIR_NAME}">
+            <keros:then>
+                <ant-contrib:var  name = "test-keros.DIR_EXISTS"  value = "true"/>
+            </keros:then>
+
+            <keros:else>
+                <ant-contrib:var  name = "test-keros.DIR_EXISTS"  value = "false"/>
+            </keros:else>
+        </keros:if-dir-exists>
+
+        <keros:assert-equal  str1 = "${test-keros.DIR_EXISTS}"  str2 = "false"/>
+
+        <mkdir  dir = "${test-keros.state.HOME}/${test-keros.DIR_NAME}"/>
+
+        <keros:if-dir-exists  dir = "${test-keros.state.HOME}/${test-keros.DIR_NAME}">
+            <keros:then>
+                <ant-contrib:var  name = "test-keros.DIR_EXISTS"  value = "true"/>
+            </keros:then>
+
+            <keros:else>
+                <ant-contrib:var  name = "test-keros.DIR_EXISTS"  value = "false"/>
+            </keros:else>
+        </keros:if-dir-exists>
+
+        <delete  dir = "${test-keros.state.HOME}/${test-keros.DIR_NAME}"/>
+
+        <keros:assert-equal  str1 = "${test-keros.DIR_EXISTS}"  str2 = "true"/>
+    </target>
+
+
+    <!--
+
+        Tests if-file-exists macro...
+
+    -->
+    <target  name = "test-if-file-exists">
+        <keros:compute-timestamp  property = "test-keros.FILE_NAME"   prefix = "IF_FILE_EXISTS_TEST_"/>
+
+        <delete  file = "${test-keros.state.HOME}/${test-keros.FILE_NAME}"/>
+
+        <keros:if-file-exists  file = "${test-keros.state.HOME}/${test-keros.FILE_NAME}">
+            <keros:then>
+                <ant-contrib:var  name = "test-keros.FILE_EXISTS"  value = "true"/>
+            </keros:then>
+
+            <keros:else>
+                <ant-contrib:var  name = "test-keros.FILE_EXISTS"  value = "false"/>
+            </keros:else>
+        </keros:if-file-exists>
+
+        <keros:assert-equal  str1 = "${test-keros.FILE_EXISTS}"  str2 = "false"/>
+
+        <touch  file = "${test-keros.state.HOME}/${test-keros.FILE_NAME}"/>
+
+        <keros:if-file-exists  file = "${test-keros.state.HOME}/${test-keros.FILE_NAME}">
+            <keros:then>
+                <ant-contrib:var  name = "test-keros.FILE_EXISTS"  value = "true"/>
+            </keros:then>
+
+            <keros:else>
+                <ant-contrib:var  name = "test-keros.FILE_EXISTS"  value = "false"/>
+            </keros:else>
+        </keros:if-file-exists>
+
+        <delete  file = "${test-keros.state.HOME}/${test-keros.FILE_NAME}"/>
+
+        <keros:assert-equal  str1 = "${test-keros.FILE_EXISTS}"  str2 = "true"/>
+    </target>
+
+
+    <!--
+
+        Tests file extension computation...
+
+    -->
+    <target  name = "test-compute-file-extension">
+        <keros:compute-file-extension  file = "/foo/bar/alpha/theta/file1"  property = "test-keros.EXTENSION"/>
+        <keros:assert-equal  str1 = "${test-keros.EXTENSION}"  str2 = ""/>
+
+        <keros:compute-file-extension  file = "/foo/bar/alpha/theta/file1.tar.bz2"  property = "test-keros.EXTENSION"/>
+        <keros:assert-equal  str1 = "${test-keros.EXTENSION}"  str2 = "bz2"/>
+
+        <keros:compute-file-extension  file = "/foo/bar/alpha/theta/file2.tar.gz"  property = "test-keros.EXTENSION"/>
+        <keros:assert-equal  str1 = "${test-keros.EXTENSION}"  str2 = "gz"/>
+
+        <keros:compute-file-extension  file = "/foo/bar/alpha/theta/file3.zip"  property = "test-keros.EXTENSION"/>
+        <keros:assert-equal  str1 = "${test-keros.EXTENSION}"  str2 = "zip"/>
+
+        <keros:compute-file-extension  file = "/foo/bar/alpha/theta/file4.txt"  property = "test-keros.EXTENSION"/>
+        <keros:assert-equal  str1 = "${test-keros.EXTENSION}"  str2 = "txt"/>
+
+        <keros:compute-file-extension  file = "/foo/bar/alpha/theta/file5.bmp"  property = "test-keros.EXTENSION"/>
+        <keros:assert-equal  str1 = "${test-keros.EXTENSION}"  str2 = "bmp"/>
+    </target>
+
+
+    <!--
+
+        Tests file extension truncating...
+
+    -->
+    <target  name = "test-truncate-file-extension">
+        <keros:truncate-file-extension  file = "/foo/bar/alpha/theta/file1"  property = "test-keros.TRUNCATE"/>
+        <keros:assert-equal  str1 = "${test-keros.TRUNCATE}"  str2 = "/foo/bar/alpha/theta/file1"/>
+
+        <keros:truncate-file-extension  file = "/foo/bar/alpha/theta/file1.tar.bz2"  property = "test-keros.TRUNCATE"/>
+        <keros:assert-equal  str1 = "${test-keros.TRUNCATE}"  str2 = "/foo/bar/alpha/theta/file1.tar"/>
+
+        <keros:truncate-file-extension  file = "/foo/bar/alpha/theta/file2.tar.gz"  property = "test-keros.TRUNCATE"/>
+        <keros:assert-equal  str1 = "${test-keros.TRUNCATE}"  str2 = "/foo/bar/alpha/theta/file2.tar"/>
+
+        <keros:truncate-file-extension  file = "/foo/bar/alpha/theta/file3.zip"  property = "test-keros.TRUNCATE"/>
+        <keros:assert-equal  str1 = "${test-keros.TRUNCATE}"  str2 = "/foo/bar/alpha/theta/file3"/>
+
+        <keros:truncate-file-extension  file = "/foo/bar/alpha/theta/file4.txt"  property = "test-keros.TRUNCATE"/>
+        <keros:assert-equal  str1 = "${test-keros.TRUNCATE}"  str2 = "/foo/bar/alpha/theta/file4"/>
+
+        <keros:truncate-file-extension  file = "/foo/bar/alpha/theta/file5.bmp"  property = "test-keros.TRUNCATE"/>
+        <keros:assert-equal  str1 = "${test-keros.TRUNCATE}"  str2 = "/foo/bar/alpha/theta/file5"/>
+    </target>
+
+
+    <!--
+
+        Tests unpacking tar files...
+
+    -->
+    <target  name = "test-unpack-tar">
+        <delete  dir = "${test-keros.tar.HOME}"/>
+
+        <keros:unpack-tar  tar-file = "${test-keros.test.resources.HOME}/tar-unpack-test.tar"  untar-dir = "${test-keros.tar.HOME}"  clean-up = "false"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir1/dir1a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir1/dir1b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir1/dir1c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir2/dir2a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir2/dir2b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir2/dir2c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir3/dir3a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir3/dir3b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.tar.HOME}/tar/dir3/dir3c"/>
+    </target>
+
+
+    <!--
+
+        Tests unpacking tar.bz2 files...
+
+    -->
+    <target  name = "test-unpack-bz2">
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+
+        <keros:unpack-bz2  bz2-file = "${test-keros.test.resources.HOME}/bz2-unpack-test.tar.bz2"  bunzip-dir = "${test-keros.tar.HOME}"  untar-dir = "${test-keros.unpack.HOME}"  clean-up = "false"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir1/dir1a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir1/dir1b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir1/dir1c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir2/dir2a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir2/dir2b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir2/dir2c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir3/dir3a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir3/dir3b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir3/dir3c"/>
+
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+    </target>
+
+
+    <!--
+
+        Tests unpacking tar.gz files...
+
+    -->
+    <target  name = "test-unpack-gz">
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+
+        <keros:unpack-gz  gz-file = "${test-keros.test.resources.HOME}/gz-unpack-test.tar.gz"  gunzip-dir = "${test-keros.tar.HOME}"  untar-dir = "${test-keros.unpack.HOME}"  clean-up = "false"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir1/dir1a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir1/dir1b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir1/dir1c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir2/dir2a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir2/dir2b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir2/dir2c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir3/dir3a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir3/dir3b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir3/dir3c"/>
+
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+    </target>
+
+
+    <!--
+
+        Tests unpacking zip files...
+
+    -->
+    <target  name = "test-unpack-zip">
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+
+        <keros:unpack-zip  zip-file = "${test-keros.test.resources.HOME}/zip-unpack-test.zip"  unzip-dir = "${test-keros.unpack.HOME}"  clean-up = "false"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir1/dir1a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir1/dir1b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir1/dir1c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir2/dir2a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir2/dir2b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir2/dir2c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir3/dir3a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir3/dir3b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir3/dir3c"/>
+
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+    </target>
+
+
+    <!--
+
+        Tests unpacking...
+
+    -->
+    <target  name = "test-unpack">
+        <!--
+
+            Blindly unpack a tar file...
+        
+        -->             
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+
+        <keros:unpack  file = "${test-keros.test.resources.HOME}/tar-unpack-test.tar"  uncompress-dir = "${test-keros.tar.HOME}"  unpack-dir = "${test-keros.unpack.HOME}"  clean-up = "false"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir1/dir1a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir1/dir1b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir1/dir1c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir2/dir2a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir2/dir2b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir2/dir2c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir3/dir3a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir3/dir3b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/tar/dir3/dir3c"/>
+
+        <!--
+
+            Blindly unpack a tar.bz2 file...
+        
+        -->             
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+
+        <keros:unpack  file = "${test-keros.test.resources.HOME}/bz2-unpack-test.tar.bz2"  uncompress-dir = "${test-keros.tar.HOME}"  unpack-dir = "${test-keros.unpack.HOME}"  clean-up = "false"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir1/dir1a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir1/dir1b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir1/dir1c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir2/dir2a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir2/dir2b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir2/dir2c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir3/dir3a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir3/dir3b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/bz2/dir3/dir3c"/>
+
+        <!--
+
+            Blindly unpack a tar.gz file...
+        
+        -->             
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+
+        <keros:unpack  file = "${test-keros.test.resources.HOME}/gz-unpack-test.tar.gz"  uncompress-dir = "${test-keros.tar.HOME}"  unpack-dir = "${test-keros.unpack.HOME}"  clean-up = "false"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir1/dir1a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir1/dir1b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir1/dir1c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir2/dir2a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir2/dir2b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir2/dir2c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir3/dir3a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir3/dir3b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/gz/dir3/dir3c"/>
+
+        <!--
+
+            Blindly unpack a zip file...
+        
+        -->             
+
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+
+        <keros:unpack  file = "${test-keros.test.resources.HOME}/zip-unpack-test.zip"  uncompress-dir = "${test-keros.tar.HOME}"  unpack-dir = "${test-keros.unpack.HOME}"  clean-up = "false"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir1/dir1a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir1/dir1b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir1/dir1c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir2/dir2a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir2/dir2b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir2/dir2c"/>
+
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir3/dir3a"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir3/dir3b"/>
+        <keros:assert-dir-exists  dir = "${test-keros.unpack.HOME}/zip/dir3/dir3c"/>
+
+        <!--
+
+            Clean up
+
+        -->
+        <delete  dir = "${test-keros.tar.HOME}"/>
+        <delete  dir = "${test-keros.unpack.HOME}"/>
+    </target>
+
+
+    <!--
+
+        Test computing the file modification date.
+
+    -->
+    <target  name = "test-compute-file-modification-date">
+        <keros:compute-file-modification-date  file = "${ant.file.test-keros}"  property = "test-keros.test-compute-file-modification-date.FILE"  format = "yyy MM dd"/>
+
+        <keros:assert-not-equal  str1 = "${test-keros.test-compute-file-modification-date.FILE}"  str2 = ""/>
+    </target>
+
+
+    <!--
+
+        Test ensure string equality.
+
+    -->
+    <target  name = "test-assert-equal">
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-equal  str1 = "foo"  str2 = "foo"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <ant-contrib:var  name = "test-keros.ASSERT_EQUAL"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <fail  if = "test-keros.ASSERT_EQUAL"  message = "Strings were equal but failure arose"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-equal  str1 = "foo"  str2 = "bar"/>
+                <ant-contrib:var  name = "test-keros.ASSERT_EQUAL"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <fail  if = "test-keros.ASSERT_EQUAL"  message = "Strings were NOT equal but NO failure arose"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test ensure string inequality.
+
+    -->
+    <target  name = "test-assert-not-equal">
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-not-equal  str1 = "foo"  str2 = "foo"/>
+                <ant-contrib:var  name = "test-keros.ASSERT_NOT_EQUAL"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <fail  if = "test-keros.ASSERT_NOT_EQUAL"  message = "Strings were equal but NO failure arose"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-not-equal  str1 = "foo"  str2 = "bar"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <ant-contrib:var  name = "test-keros.ASSERT_NOT_EQUAL"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <fail  if = "test-keros.ASSERT_NOT_EQUAL"  message = "Strings were NOT equal but NO failure arose"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test ensure numbery.
+
+    -->
+    <target  name = "test-assert-is-number">
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "100"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "   100"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "100   "/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "   100   "/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "99876.57812"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "    99876.57812"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "99876.57812    "/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "    99876.57812    "/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "99876.57812"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "99876.57812"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Was number and failure arose"/>
+            </ant-contrib:catch>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "foo"/>
+                <ant-contrib:var  name = "test-keros.ASSERT_IS_NUMBER"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <fail  if = "test-keros.ASSERT_IS_NUMBER"  message = "Was not number but NO failure arose"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "100.foo"/>
+                <ant-contrib:var  name = "test-keros.ASSERT_IS_NUMBER"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <fail  if = "test-keros.ASSERT_IS_NUMBER"  message = "Was not number but NO failure arose"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "foo.987"/>
+                <ant-contrib:var  name = "test-keros.ASSERT_IS_NUMBER"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <fail  if = "test-keros.ASSERT_IS_NUMBER"  message = "Was not number but NO failure arose"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-is-number  number = "foo.bar"/>
+                <ant-contrib:var  name = "test-keros.ASSERT_IS_NUMBER"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <fail  if = "test-keros.ASSERT_IS_NUMBER"  message = "Was not number but NO failure arose"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test ensures a ref id is a ref id.
+
+    -->
+    <target  name = "test-assert-ref-id">
+        <keros:compute-timestamp  property = "TEST_DIR_NAME"   prefix = "TEST_"/>
+
+        <ant-contrib:var  name = "TEST_PROPERTY"  value = "foo"/>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <mkdir dir  = "${test-keros.state.HOME}/${TEST_DIR_NAME}/foo"/>
+                <touch file = "${test-keros.state.HOME}/${TEST_DIR_NAME}/foo/bar.txt"/>
+
+                <path  id = "test-keros.COPY_SUB_REF_ID">
+                    <fileset  dir = "${TEST_DIR_NAME}"/>
+                </path>
+
+                <keros:assert-ref-id  ref-id = "test-keros.COPY_SUB_REF_ID"/>
+                <ant-contrib:var name = "test-keros.ASSERT_REF_ID"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <ant-contrib:if>
+                    <isset  property = "test-keros.ASSERT_REF_ID"/>
+
+                    <ant-contrib:then>
+                        <fail  message = "Ref defined but failure occured"/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+
+                <delete  dir = "${test-keros.state.HOME}/${TEST_DIR_NAME}"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:assert-ref-id  ref-id = "TEST_PROPERTY"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <ant-contrib:var name = "test-keros.ASSERT_REF_ID"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <ant-contrib:if>
+                    <not>
+                        <isset  property = "test-keros.ASSERT_REF_ID"/>
+                    </not>
+
+                    <ant-contrib:then>
+                        <fail  message = "Ref NOT defined but failure did NOT occur"/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+
+                <delete  dir = "${test-keros.state.HOME}/${TEST_DIR_NAME}"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test ensures left trim of number works.
+
+    -->
+    <target  name = "test-compute-number-left-trim">
+        <keros:compute-number-left-trim  property = "TEST_NUMBER_LEFT_TRIM"  number = "000415"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_LEFT_TRIM}"  arg2 = "415"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Left trim failed:  ${TEST_NUMBER_LEFT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-left-trim  property = "TEST_NUMBER_LEFT_TRIM"  number = "    0000932  "/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_LEFT_TRIM}"  arg2 = "932"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Left trim failed:  ${TEST_NUMBER_LEFT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-left-trim  property = "TEST_NUMBER_LEFT_TRIM"  number = "    0000932.12398721390000  "/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_LEFT_TRIM}"  arg2 = "932.12398721390000"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Left trim failed:  ${TEST_NUMBER_LEFT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-left-trim  property = "TEST_NUMBER_LEFT_TRIM"  number = "00000000000000000000800"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_LEFT_TRIM}"  arg2 = "800"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Left trim failed:  ${TEST_NUMBER_LEFT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:compute-number-left-trim  property = "TEST_NUMBER_LEFT_TRIM"  number = "000Nice Test"/>
+                <ant-contrib:var  name = "TEST_FAIL_NUMBER_LEFT_TRIM"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <ant-contrib:if>
+                    <isset  property = "TEST_FAIL_NUMBER_LEFT_TRIM"/>
+
+                    <ant-contrib:then>
+                        <fail  message = "Used an alpha numeric value but left trim succeeded."/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test ensures right trim of number works.
+
+    -->
+    <target  name = "test-compute-number-right-trim">
+        <keros:compute-number-right-trim  property = "TEST_NUMBER_RIGHT_TRIM"  number = "000415.0000000"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_RIGHT_TRIM}"  arg2 = "000415"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Right trim failed:  ${TEST_NUMBER_RIGHT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+
+        <keros:compute-number-right-trim  property = "TEST_NUMBER_RIGHT_TRIM"  number = "615.000000"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_RIGHT_TRIM}"  arg2 = "615"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Right trim failed:  ${TEST_NUMBER_RIGHT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-right-trim  property = "TEST_NUMBER_RIGHT_TRIM"  number = "715.0000001"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_RIGHT_TRIM}"  arg2 = "715.0000001"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Right trim failed:  ${TEST_NUMBER_RIGHT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-right-trim  property = "TEST_NUMBER_RIGHT_TRIM"  number = "715.0"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_RIGHT_TRIM}"  arg2 = "715"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Right trim failed:  ${TEST_NUMBER_RIGHT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-right-trim  property = "TEST_NUMBER_RIGHT_TRIM"  number = "715.0  "/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_RIGHT_TRIM}"  arg2 = "715"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Right trim failed:  ${TEST_NUMBER_RIGHT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-right-trim  property = "TEST_NUMBER_RIGHT_TRIM"  number = "  715.0"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_RIGHT_TRIM}"  arg2 = "715"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Right trim failed:  ${TEST_NUMBER_RIGHT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-right-trim  property = "TEST_NUMBER_RIGHT_TRIM"  number = "1008.0000001233210000000000000"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_RIGHT_TRIM}"  arg2 = "1008.000000123321"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Right trim failed:  ${TEST_NUMBER_RIGHT_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:compute-number-right-trim  property = "TEST_NUMBER_RIGHT_TRIM"  number = "300.000Nice Test000"/>
+                <ant-contrib:var  name = "TEST_FAIL_NUMBER_RIGHT_TRIM"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <ant-contrib:if>
+                    <isset  property = "TEST_FAIL_NUMBER_RIGHT_TRIM"/>
+
+                    <ant-contrib:then>
+                        <fail  message = "Used an alpha numeric value but right trim succeeded."/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test ensures trim of number works.
+
+    -->
+    <target  name = "test-compute-number-trim">
+        <keros:compute-number-trim  property = "TEST_NUMBER_TRIM"  number = "00000615.000000"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_TRIM}"  arg2 = "615"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Trim failed:  615 != ${TEST_NUMBER_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-trim  property = "TEST_NUMBER_TRIM"  number = "000000715.000000100000000"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_TRIM}"  arg2 = "715.0000001"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Trim failed:  715.0000001 != ${TEST_NUMBER_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-trim  property = "TEST_NUMBER_TRIM"  number = "     0000715.00000    "/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_TRIM}"  arg2 = "715"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Trim failed:  715 != ${TEST_NUMBER_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-trim  property = "TEST_NUMBER_TRIM"  number = "  715.0  "/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_TRIM}"  arg2 = "715"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Trim failed:  715 != ${TEST_NUMBER_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-trim  property = "TEST_NUMBER_TRIM"  number = "000000001008.0000001233210000000000000"/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_TRIM}"  arg2 = "1008.000000123321"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Trim failed:  1008.000000123321 != ${TEST_NUMBER_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <keros:compute-number-trim  property = "TEST_NUMBER_TRIM"  number = "     000000001008.0000001233210000000000000       "/>
+        <ant-contrib:if>
+            <not>
+                <equals  arg1 = "${TEST_NUMBER_TRIM}"  arg2 = "1008.000000123321"/>
+            </not>
+
+            <ant-contrib:then>
+                <fail  message = "Trim failed:  1008.000000123321 != ${TEST_NUMBER_TRIM}"/>
+            </ant-contrib:then>
+        </ant-contrib:if>
+
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros:compute-number-trim  property = "TEST_NUMBER_TRIM"  number = "300.000Nice Test000"/>
+                <ant-contrib:var  name = "TEST_FAIL_NUMBER_TRIM"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch/>
+
+            <ant-contrib:finally>
+                <ant-contrib:if>
+                    <isset  property = "TEST_FAIL_NUMBER_TRIM"/>
+
+                    <ant-contrib:then>
+                        <fail  message = "Used an alpha numeric value [300.000Nice Test000] but trim succeeded."/>
+                    </ant-contrib:then>
+                </ant-contrib:if>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Test time stamp.
+
+    -->
+    <target  name = "test-compute-timestamp">
+        <keros:compute-timestamp  property = "test-keros.COMPUTE_TIMESTAMP_1"/>
+
+        <sleep  seconds = "2"/>
+
+        <keros:compute-timestamp  property = "test-keros.COMPUTE_TIMESTAMP_2"/>
+
+        <keros:assert-not-equal  str1 = "${test-keros.COMPUTE_TIMESTAMP_1}"  str2 = "${test-keros.COMPUTE_TIMESTAMP_2}"  error-msg = "Time stamp computation after sleeping 2 seconds did not ant-contrib:vary"/>
+    </target>
+
+
+    <!--
+
+        Test replace chars,
+
+    -->
+    <target  name = "test-compute-replacement">
+        <keros:compute-replacement  str  = "com.foo.bar.Alpha"  to-replace = "."  replacement = "${file.separator}"  property = "test-keros.COMPUTE_REPLACEMENT"/>
+        <keros:assert-not-equal     str1 = "com.foo.bar.Alpha"  str2 = "${test-keros.COMPUTE_REPLACEMENT}"/>
+        <keros:assert-equal         str1 = "com${file.separator}foo${file.separator}bar${file.separator}Alpha"  str2 = "${test-keros.COMPUTE_REPLACEMENT}"/>
+
+        <keros:compute-replacement  str  = "com.foo.bar;Alpha"    to-replace = ";A"  replacement = "SCOT"  property = "test-keros.COMPUTE_REPLACEMENT"/>
+        <keros:assert-not-equal     str1 = "com.foo.bar;Alpha"    str2 = "${test-keros.COMPUTE_REPLACEMENT}"/>
+        <keros:assert-equal         str1 = "com.foo.barSCOTlpha"  str2 = "${test-keros.COMPUTE_REPLACEMENT}"/>
+
+        <keros:compute-replacement  str  = "com.foo;Abar;Alpha"      to-replace = ";A"  replacement = "SCOT"  property = "test-keros.COMPUTE_REPLACEMENT"/>
+        <keros:assert-not-equal     str1 = "com.foo;Abar;Alpha"      str2 = "${test-keros.COMPUTE_REPLACEMENT}"/>
+        <keros:assert-equal         str1 = "com.fooSCOTbarSCOTlpha"  str2 = "${test-keros.COMPUTE_REPLACEMENT}"/>
+    </target>
+
+
+    <!--
+
+        Test to make sure numeric comparions work...
+
+    -->
+    <target name = "test-number-compare">
+        <keros:number-compare  arg1 = "40"  arg2 = "100">
+            <keros:equal>
+                <fail  message = "100 != 40"/>
+            </keros:equal>
+
+            <keros:less>
+                <ant-contrib:var  name = "TEST_NUMBER_COMPARE_GREATER"/>
+            </keros:less>
+
+            <keros:not-equal>
+                <ant-contrib:var  name = "TEST_NUMBER_COMPARE_NOT_EQUAL"/>
+            </keros:not-equal>
+
+            <keros:greater>
+                <fail  message = "40 &gt; 100"/>
+            </keros:greater>
+        </keros:number-compare>
+
+        <fail  unless = "TEST_NUMBER_COMPARE_NOT_EQUAL"  message = "Not equal block did not execute"/>
+        <fail  unless = "TEST_NUMBER_COMPARE_GREATER"    message = "Greater block did not execute"/>
+
+        <ant-contrib:var  name = "TEST_NUMBER_COMPARE_NOT_EQUAL"  unset = "true"/>
+        <ant-contrib:var  name = "TEST_NUMBER_COMPARE_GREATER"    unset = "true"/>
+
+        <keros:number-compare  arg1 = "20"  arg2 = "10">
+            <keros:equal>
+                <fail  message = "20 != 100"/>
+            </keros:equal>
+
+            <keros:less>
+                <fail  message = "20 &lt; 10"/>
+            </keros:less>
+
+            <keros:not-equal>
+                <ant-contrib:var  name = "TEST_NUMBER_COMPARE_NOT_EQUAL"/>
+            </keros:not-equal>
+
+            <keros:greater>
+                <ant-contrib:var  name = "TEST_NUMBER_COMPARE_LESS"/>
+            </keros:greater>
+        </keros:number-compare>
+
+        <fail  unless = "TEST_NUMBER_COMPARE_NOT_EQUAL"  message = "Not equal block did not execute"/>
+        <fail  unless = "TEST_NUMBER_COMPARE_LESS"       message = "Greater block did not execute"/>
+
+        <ant-contrib:var  name = "TEST_NUMBER_COMPARE_NOT_EQUAL"  unset = "true"/>
+        <ant-contrib:var  name = "TEST_NUMBER_COMPARE_LESS"       unset = "true"/>
+
+        <keros:number-compare  arg1 = "95"  arg2 = "95">
+            <keros:equal>
+                <ant-contrib:var  name = "TEST_NUMBER_COMPARE_EQUAL"/>
+            </keros:equal>
+
+            <keros:less>
+                <fail  message = "95 &lt; 95"/>
+            </keros:less>
+
+            <keros:not-equal>
+                <fail  message = "95 != 95"/>
+            </keros:not-equal>
+
+            <keros:greater>
+                <fail  message = "95 &gt; 95"/>
+            </keros:greater>
+        </keros:number-compare>
+
+        <fail  unless = "TEST_NUMBER_COMPARE_EQUAL"  message = "Equal block did not execute"/>
+    </target>
+
+
+    <!--
+
+        Test to make sure process-list work...
+
+    -->
+    <target name = "test-process-list">
+        <ant-contrib:var  name = "keros.prev-result"  value = ""/>
+        <ant-contrib:var  name = "keros.curr-result"  value = ""/>
+        <ant-contrib:var  name = "keros.next-result"  value = ""/>
+
+        <keros:process-list  list = "1,2,3,4"  previous = "keros.prev"  current = "keros.curr"  next = "keros.next">
+            <keros:process>
+                <ant-contrib:var  name = "keros.prev-result"  value = "${keros.prev-result}${keros.prev}"/>
+                <ant-contrib:var  name = "keros.curr-result"  value = "${keros.curr-result}${keros.curr}"/>
+                <ant-contrib:var  name = "keros.next-result"  value = "${keros.next-result}${keros.next}"/>
+            </keros:process>
+        </keros:process-list>
+
+        <keros:assert-equal  str1 = "${keros.prev-result}"  str2 = "123"/>
+        <keros:assert-equal  str1 = "${keros.curr-result}"  str2 = "1234"/>
+        <keros:assert-equal  str1 = "${keros.next-result}"  str2 = "234"/>
+    </target>
+
+                           
+    <!--
+
+        Tests enhanced Javacc functionality...
+
+    -->
+    <target  name = "test-javacc2java">
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <keros-javacc-project:javacc2java  src-dir = "../javacc"  dest-dir = "${test-keros.javacc.HOME}"  javacc-home = "${keros.dependency.HOME}"  static = "${keros-project.javacc.STATIC}"  listfiles = "${keros-project.javacc.LISTFILES}"/>
+
+                <keros:assert-dir-exists   dir  = "${test-keros.javacc.HOME}"/>
+                <keros:assert-file-exists  file = "${test-keros.javacc.HOME}/JPlateParser.java"/>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <fail  message = "Problem using Javacc to generate Java!"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <delete  dir = "${test-keros.javacc.HOME}"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Tests Find-Bugs functionality...
+
+    -->
+    <target  name = "test-find-bugs">
+        <ant-contrib:trycatch>
+            <ant-contrib:try>
+                <mkdir  dir = "${test-keros.find-bugs.HOME}"/>
+
+                <javac  srcdir = "../java"  destdir = "${test-keros.find-bugs.HOME}"/>
+                <jar    destfile = "${test-keros.find-bugs.HOME}/test-find-bugs.jar"  basedir = "${test-keros.find-bugs.HOME}"/>
+
+                <find-bugs:analyze  home = "${keros.property-default.version.HOME}"  output = "text"  reportLevel = "low"  effort = "max"  failOnError = "true">
+                    <find-bugs:class       location = "${test-keros.find-bugs.HOME}/test-find-bugs.jar"/>
+                    <find-bugs:sourcePath  path     = "../java"/>
+                </find-bugs:analyze>
+            </ant-contrib:try>
+
+            <ant-contrib:catch>
+                <echo  message = "Problem using FindBugs!  Most likely an issue with Ivy"/>
+            </ant-contrib:catch>
+
+            <ant-contrib:finally>
+                <delete  dir = "${test-keros.find-bugs.HOME}"/>
+            </ant-contrib:finally>
+        </ant-contrib:trycatch>
+    </target>
+
+
+    <!--
+
+        Clean up Keros always before we begin...
+
+    -->
+    <target  name = "init">
+        <delete  dir = "${test-keros.state.HOME}"/>
+    </target>
+
+
+    <!--
+
+        Clean up Keros when done...
+
+    -->
+    <target  name = "finish">
+        <delete  dir = "${test-keros.state.HOME}"/>
+    </target>
+
+
+    <!--
+
+        This target runs the complete test suite.
+
+    -->
+    <target  name = "test-keros"  depends = "init, test-property-default, test-sort-files, test-compute-locale, test-compute-class-branch, test-compute-class-info, test-replace-url, test-assert-dir-exists, test-assert-file-exists, test-compute-branch, test-auto-property, test-set-property, test-conditional-set-property, test-for, test-copy-dir, test-copy-ref-id, test-copy, test-load-file, test-if-dir-exists, test-if-file-exists, test-compute-file-extension, test-truncate-file-extension, test-unpack-tar, test-unpack-bz2, test-unpack-gz, test-unpack-zip, test-unpack, test-compute-file-modification-date, test-assert-equal, test-assert-not-equal, test-assert-is-number, test-assert-ref-id, test-compute-number-left-trim, test-compute-number-right-trim, test-compute-number-trim, test-compute-timestamp, test-compute-replacement, test-number-compare, test-process-list, test-javacc2java, test-find-bugs, finish"/>
+</project>
+
+

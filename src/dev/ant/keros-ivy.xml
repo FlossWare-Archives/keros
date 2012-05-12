@@ -1,0 +1,8 @@
+<ivy-module  version = "2.0">
+    <info  organisation = "Keros"  module = "main"/>
+    <dependencies>
+        <dependency  org = "ant-contrib"  name = "ant-contrib"  rev = "1.0b2"/>
+        <dependency  org = "bsf"          name = "bsf"          rev = "2.4.0"/>
+        <dependency  org = "bsh"          name = "bsh"          rev = "2.0b4"/>
+    </dependencies>
+</ivy-module>

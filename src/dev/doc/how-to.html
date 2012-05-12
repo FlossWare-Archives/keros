@@ -1,0 +1,608 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type"
+ content="text/html; charset=ISO-8859-1">
+  <title>How To</title>
+  <meta content="sfloess" name="author">
+  <meta content="Contains &quot;how to&quot; information regarding Keros"
+ name="description">
+</head>
+<body dir="ltr"
+ style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);"
+ lang="en-US" link="#0000ee" vlink="#551a8b" alink="#ee0000">
+<h1 align="center">Keros @keros-project.release.VERSION@</h1>
+<h1 align="center">"How To"<br>
+</h1>
+<ul>
+</ul>
+<h2>How To<br>
+</h2>
+<div style="text-align: justify;">This section describes how to use
+portions of Keros but <span style="font-style: italic;">does not</span>
+describe it all.&nbsp; In
+most cases, there is sufficiently generated HTML from the included XML
+files (described below as <a href="#Ant_Doc">Ant Doc</a>) that should
+show enough information to be understandable and usable. </div>
+<h3><a name="Running_The_Environment"></a>Running Keros<br>
+</h3>
+<h4><a name="Utilizing_Third_Party_Libraries"></a>Utilizing Third Party
+Libraries<br>
+</h4>
+<div style="text-align: justify;">Portions of Keros
+rely upon third
+party libraries (refer to the <a href="requirements.html">project
+requirements</a>).&nbsp;
+In order to
+utilize those libraries, <a href="http://ant.apache.org/">Ant</a>
+versions prior to 1.7.1 require the inclusion of the libraries as
+follows:<br>
+</div>
+<br>
+<div style="margin-left: 40px;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">ant -lib &lt;path
+of libraries&gt; [task to execute]</span></font><br>
+</div>
+<br>
+For example, assuming that Keros is
+installed on a Linux system in <font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">/home/shared/keros-1.0</span></font>
+and user <small><span
+ style="font-family: Courier New,Courier,monospace;">sfloess</span></small>
+is running Keros:<br>
+<br>
+<div style="margin-left: 40px;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">ant -lib </span><span
+ style="font-family: Courier New,Courier,monospace;"></span></font><font
+ size="-1"><span style="font-family: Courier New,Courier,monospace;">/home/sfloess/.keros/1.0/lib:</span></font><font
+ size="-1"><span style="font-family: Courier New,Courier,monospace;">/home/shared/keros-1.0/lib</span></font><font
+ size="-1"><span style="font-family: Courier New,Courier,monospace;">/find-bugs:</span></font><font
+ size="-1"><span style="font-family: Courier New,Courier,monospace;">/home/shared/keros-1.0/lib</span></font><font
+ size="-1"><span style="font-family: Courier New,Courier,monospace;">/ivy</span></font><font
+ size="-1"><span style="font-family: Courier New,Courier,monospace;">
+[task to execute]</span></font><br>
+<font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;"></span></font></div>
+<br>
+Third party libraries used by Keros and
+managed by <a href="http://ant.apache.org/ivy/index.html">Ivy</a> are,
+by default, stored in <span style="font-family: monospace;">[user's
+home directory]/.keros/[Keros
+version number]/lib</span>.&nbsp; Non-<a
+ href="http://ant.apache.org/ivy/index.html">Ivy</a>: managed libraries
+are stored within the Keros "unpacked" release directory in a
+subdirectory entitled <span style="font-family: monospace;">lib</span>.&nbsp;&nbsp;
+Currently
+there
+are two included&nbsp; libraries:&nbsp; <a
+ href="http://ant.apache.org/ivy/index.html">Ivy</a>: and <a
+ href="http://findbugs.sourceforge.net/">Find Bugs</a>. For future
+reference:&nbsp; <a href="http://ant.apache.org/ivy/index.html">Ivy</a>
+will most likely be included in all Keros releases.&nbsp; However, due
+to an issue with <a href="http://findbugs.sourceforge.net/">Find Bugs</a>
+(some problem with dependencies and a POM file) it had to be included
+(this may change in future Keros releases).<br>
+<br>
+To determine the version of <a href="http://ant.apache.org/">Ant</a>
+used, enter the following on the command line:<br>
+<br>
+<div style="margin-left: 40px;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">ant -version</span></font><br>
+</div>
+<br>
+<span style="font-style: italic;"><span style="font-weight: bold;">Please
+note:</span></span>&nbsp; <a href="http://ant.apache.org/">Ant</a>
+versions 1.7.1 and later require no configuration - meaning the <font
+ size="-1"><span style="font-family: Courier New,Courier,monospace;">lib</span></font>
+directory will be "automagically" extrapolated.&nbsp; Earlier versions
+have a bug dealing with taskdef's, scriptdef's and classpath (meaning
+the classpath
+is ignored in the taskdef declaration).<br>
+<h4><a name="Include_Keros"></a>Include Keros<br>
+</h4>
+As described in the <a href="summary.html">summary</a>, <a
+ href="index.html">Keros</a> is reusable - simply include the
+portions needed:<br>
+<ul>
+  <li>Macros are provided that act like reusable functions for cross
+platform scripting.&nbsp; For example, assume one wishes to create a
+property named&nbsp; <small><span
+ style="font-family: Courier New,Courier,monospace;">CURRENT_TIME</span></small>
+whose prefix is "The current date is:&nbsp; " plus the current
+date/time.&nbsp; The following script illustrates this:</li>
+</ul>
+<pre style="margin-left: 40px;">&lt;project name = "ComputeCurrentTime"  xmlns:keros = "http://keros.sourceforge.net/keros"&gt;<br>	&lt;import  file = "/some/dir/to/keros/ant/keros.xml"/&gt;<br><br>	&lt;keros:compute-timestamp  property = "CURRENT_TIME"  prefix = "The current date is:  "/&gt;<br><br>	&lt;echo  message = "${CURRENT_TIME}"/&gt;<br>&lt;/project&gt; <br></pre>
+<ul>
+  <li>XSLT's are provided to convert <a href="http://ant.apache.org/">Ant</a>
+scripts and/or <a href="http://subversion.tigris.org/">Subversion</a>
+log
+files to HTML.&nbsp; Additionally utility XSLT functions are included
+as well.&nbsp; The section below, <a href="#GENERATE_DOCUMENTATION">Generate
+Documentation</a>, provides further examples.<br>
+  </li>
+</ul>
+<ul>
+  <li>A project environment that can perform such things as generating
+code, compiling Java, generating documentation and releases, etc.&nbsp;
+For example, assume one has development needs that include <a
+ href="https://javacc.dev.java.net/">JavaCC</a> generation and Java
+compilation.&nbsp; The following <a href="http://ant.apache.org/">Ant</a>
+script will support this functionality: </li>
+</ul>
+<div style="margin-left: 40px;">
+<pre>&lt;project  name = "ExampleOne"  default = "Main"  xmlns:keros = "http://keros.sourceforge.net/keros"&gt;<br>	&lt;import file = "/some/dir/to/keros/ant/keros-project.xml"/&gt;<br>	&lt;target  name = "Main"  depends = "keros-project.generate.parser2java, keros-project.compile.java"/&gt;<br>&lt;/project&gt;<br></pre>
+</div>
+<span style="font-style: italic;"><span style="font-weight: bold;"></span></span>
+<div style="margin-left: 40px;"><span style="font-style: italic;"><span
+ style="font-weight: bold;">Please note:</span></span>&nbsp; this is a
+contrived example but illustrates the simplicity in reusing the build
+portion of Keros.&nbsp; The
+following will do the same as above:<br>
+<pre>&lt;project  name = "ExampleOne"  default = "Main"  xmlns:keros = "http://keros.sourceforge.net"&gt;<br>	&lt;import file = "/some/dir/to/keros/ant/keros-project.xml"/&gt;<br>	&lt;target  name = "Main"  depends = "keros-project.compile"/&gt;<br>&lt;/project&gt;<br></pre>
+<span style="font-style: italic;"><span style="font-weight: bold;"></span></span></div>
+<h3><a name="Generate_Documentation"></a>Generate Documentation</h3>
+Keros can generate HTML
+documentation as found below.<br>
+<h4><a name="Ant_Doc"></a>Ant Doc</h4>
+<a href="keros.html#antDoc">Ant Doc</a> is a macrodef
+that performs a similar function to Java Doc - usage is expressed in an
+XML comment
+preceeding the following elements:&nbsp; import, taskdef, macrodef,
+scriptdef, and target.&nbsp;&nbsp; Keywords are expanded to represent
+more meaningful HTML representations as follows:<br>
+<br>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top; text-align: center;"><span
+ style="font-weight: bold;">Keyword</span><br>
+      </td>
+      <td style="vertical-align: top; text-align: center;"><span
+ style="font-weight: bold;">HTML Replacement</span><br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">@Attributes<br>
+      </td>
+      <td style="vertical-align: top;">&lt;p/&gt;&lt;b&gt;Attributes&lt;/b&gt;<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">@Elements<br>
+      </td>
+      <td style="vertical-align: top;">&lt;p/&gt;&lt;b&gt;Elements&lt;/b&gt;<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">@Example<br>
+      </td>
+      <td style="vertical-align: top;">&lt;p/&gt;&lt;b&gt;Example&lt;/b&gt;<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">@Result<br>
+      </td>
+      <td style="vertical-align: top;">&lt;p/&gt;&lt;b&gt;Result&lt;/b&gt;<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">@{<br>
+      </td>
+      <td style="vertical-align: top;">&lt;code&gt;@{<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">}<br>
+      </td>
+      <td style="vertical-align: top;">}&lt;/code&gt;<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">@attribute:<br>
+      </td>
+      <td style="vertical-align: top;">&lt;br/&gt;<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">@result:<br>
+      </td>
+      <td style="vertical-align: top;">&lt;br/&gt;<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">Please note:<br>
+      </td>
+      <td style="vertical-align: top;">&lt;i&gt;Please note:&lt;/i&gt;<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+Consider the following example from&nbsp;<a
+ href="keros.html#assert-equal">assert-equal</a> comment
+header:<br>
+<font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;"><br>
+&nbsp;&nbsp;&nbsp; &lt;!--</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Determines
+if
+@{str1} is equal to @{str2}.&nbsp; If the two are not
+equal,</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+message
+defined
+in @{error-msg} is displayed.</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+@Attributes</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+@attribute:
+@{str1}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+= compared to @{str2}.</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+@attribute:
+@{str2}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+= compared to @{str1}.</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+@attribute:
+@{error-msg}
+= if @{str1} not equal to @{str2}, the message
+when failing will be displayed.</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+--&gt;<br>
+<br>
+</span></font>When applied using <a href="keros.html#antDoc">Ant Doc</a>,
+the
+HTML
+result
+is as
+follows:<br>
+<br>
+<div style="margin-left: 40px;"> Determines if <code>@{str1}</code> is
+equal to <code>@{str2}</code>. If the two are not equal, message
+defined in <code>@{error-msg}</code> is displayed. </div>
+<p style="margin-left: 40px;"><b>Attributes</b> <br>
+<code>@{str1}</code> = compared to <code>@{str2}</code>. <br>
+<code>@{str2}</code> = compared to <code>@{str1}</code>. <br>
+<code>@{error-msg}</code> = if <code>@{str1}</code> not equal to <code>@{str2}</code>,
+the
+message
+when failing will be displayed. </p>
+<div style="text-align: justify;"><span style="font-weight: bold;">Please
+note:</span>&nbsp; <a href="keros.html#antDoc">Ant Doc</a>
+by itself simply performs a replace of the aforementioned keywords on
+all files contained within a directory.&nbsp; Therefore, ideally one
+should use this macrodef after HTML documentation has been generated to
+a directory.&nbsp; The macrodef <a href="keros.html#ant2html">ant2html</a>
+first
+generate HTML from <a href="http://ant.apache.org/">Ant</a> scripts
+and then run <a href="keros.html#antDoc">Ant Doc</a>
+against the generated HTML.<br>
+<br>
+The following example illustrates using <a href="keros.html#antDoc">Ant
+Doc</a> on a directory
+entitled /some/generated/dir (this is also an example of a
+cross-platform script):<br>
+<pre style="margin-left: 40px;">&lt;project  name = "AntDocExample"  xmlns:keros = "http://keros.sourceforge.net"&gt;<br>	&lt;import file = "/some/dir/to/keros/ant/keros.xml"/&gt;<br>	&lt;keros:antDoc  dir = "/some/generated/dir"/&gt;<br>&lt;/project&gt;<br></pre>
+After executing, all the files contained in /some/generated/dir will
+have the keywords defined above replaced as described.<br>
+</div>
+<ul>
+</ul>
+<h4><a name="Ant_To_HTML"></a>Ant To HTML</h4>
+<div style="text-align: justify;"><a href="keros.html#ant2html">Ant To
+HTML</a> is a macrodef for converting <a href="http://ant.apache.org/">Ant</a>
+scripts to HTML documents.&nbsp;
+Both macrodef's make use of the same XSLT for HTML conversion.&nbsp;
+Additionally, after conversion both call <a href="keros.html#antDoc">Ant
+Doc</a> against the
+converted HTML files.<br>
+</div>
+<br>
+The following example illustrates using <a href="keros.html#ant2html">Ant
+To
+HTML</a> to convert
+an <a href="http://ant.apache.org/">Ant</a> script,
+<span style="font-family: monospace;">/some/project/dir/build.xml</span>,
+to
+HTML:<br>
+<pre style="margin-left: 40px;">&lt;project  name = "Ant2htmlExample"  xmlns:keros = "http://keros.sourceforge.net"&gt;<br>	&lt;import file = "/some/dir/to/keros/ant/keros.xml"/&gt;<br>	&lt;keros:ant2html  basedir = "/some/project/dir"  destdir = /some/output/dir"  includes = "build.xml"/&gt;<br>&lt;/project&gt;<br></pre>
+The HTML conversion is generated to <span
+ style="font-family: monospace;">/some/output/dir/build.html</span>.&nbsp;
+If
+there
+had been a number of <a href="http://ant.apache.org/">Ant</a>
+scripts to convert, the includes attribute might resemble:<br>
+<pre style="margin-left: 40px;">&lt;project  name = "Ant2htmlExample"  xmlns:keros = "http://keros.sourceforge.net"&gt;<br>	&lt;import file = "/some/dir/to/keros/ant/keros.xml"/&gt;<br>	&lt;keros:ant2html  basedir = "/some/project/dir"  destdir = /some/output/dir"  <span
+ style="font-weight: bold; font-style: italic;">includes = "**/*.xml"</span>/&gt;<br>&lt;/project&gt;</pre>
+<h4><a name="Subversion_To_HTML"></a>Subversion To HTML</h4>
+<div style="text-align: justify;"><a href="keros.html#svn2html">Subversion
+To
+HTML</a> is a macrodef for converting <a
+ href="http://subversion.tigris.org/">Subversion</a> logs to HTML
+documents.&nbsp;
+Both macrodef's make use of the same XSLT for HTML conversion.<br>
+</div>
+<br>
+The following example illustrates using&nbsp;<a
+ href="keros.html#svn2html">Subversion To HTML</a> to
+convert the <a href="http://subversion.tigris.org/">Subversion</a> log
+a project starting with the initial check in all the way through the
+current check in:<br>
+<pre style="margin-left: 40px;">&lt;project  name = "Svn2htmlExample"  xmlns:keros = "http://keros.sourceforge.net"&gt;<br>	&lt;import file = "/some/dir/to/keros/ant/documentation-macros.xml"/&gt;<br>	&lt;keros:ant2html  srcdir = "/some/project/dir"  destdir = /some/output/dir"/&gt;<br>&lt;/project</pre>
+Above, srcdir is a directory where <a
+ href="http://subversion.tigris.org/">Subversion</a> files are checked
+out and destdir is the directory where the converted HTML will be
+generated.<br>
+<h4><a name="Application_Version_Number"></a>Application Version Number</h4>
+<a href="index.html">Keros</a> can place the current version number of
+your application into documentation for you.&nbsp; To do so, simply
+define the property <span style="font-family: monospace;">keros-project.release.VERSION</span>
+with a meaningful value and place an <span
+ style="font-family: monospace;">"at sign"
+keros-project.release.VERSION "at sign"</span> (using no spaces) within
+your HTML documentation (<a href="index.html">Keros</a> will copy your
+documentation and do pattern substitution for you).&nbsp; <span
+ style="font-weight: bold;">Please note:&nbsp; </span>Here "at sign"
+refers to the character @ and literally surrounds the text <span
+ style="font-family: monospace;">keros-project.release.VERSION</span>.<br>
+<br>
+<h3><a name="Projects"></a>Projects</h3>
+<h4><a name="Ivy"></a>Ivy</h4>
+When utilizing <a href="http://ant.apache.org/ivy/index.html">Ivy</a>
+one needs to "resolve" and then "retrieve."&nbsp; Please refer to the <a
+ href="http://ant.apache.org/ivy/history/latest-milestone/index.html">Ivy
+documentation</a> for further clarification.&nbsp; However, the
+following snippet illustrates this:<br>
+<br>
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+&lt;dirname&nbsp; file = "${ant.file}"&nbsp; property = "HOME"/&gt;<br>
+<br>
+&nbsp;&nbsp;&nbsp; &lt;import&nbsp; file =
+"../keros-1.0/ant/keros.xml"&nbsp; description = "Need Keros for
+building"/&gt;<br>
+<br>
+<span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;
+&lt;ivy:resolve&nbsp;&nbsp; type = "jar"&nbsp; file =
+"${HOME}/ivy.xml"/&gt;</span><br style="font-weight: bold;">
+<span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;
+&lt;ivy:retrieve&nbsp; type = "jar"&nbsp; file =
+"${HOME}/ivy.xml"&nbsp; pattern = "../lib/[artifact].[ext]"/&gt;</span><br
+ style="font-weight: bold;">
+<br>
+&nbsp;&nbsp;&nbsp; &lt;import&nbsp; file =
+"../keros-1.0/ant/keros-project.xml"&nbsp; description = "Need Keros
+for building"/&gt;<br>
+<br>
+</span><span style="font-style: italic;"><span
+ style="font-weight: bold;">Please note:</span></span>&nbsp; <span
+ style="font-family: monospace;">keros.xml</span> is imported first
+(this contains the definition of <a
+ href="http://ant.apache.org/ivy/index.html">Ivy</a>) and lastly <span
+ style="font-family: monospace;">keros-project.xml</span> is imported
+(this contains project related functionality such as a automagic Java
+compilation).<br>
+<h4><a name="Sub_Projects"></a>Sub-projects</h4>
+<a href="index.html">Keros</a> has the capability to build
+sub-projects.&nbsp; By default, it
+starts from the directory of a project's <span
+ style="font-family: monospace;">build.xml</span> (that imports <span
+ style="font-family: monospace;">keros-project.xml</span>) calling out
+to each <span style="font-family: monospace;">build.xml</span> found
+below this directory.&nbsp; The default target
+is invoked for each.&nbsp; The included files and start directory can
+be overridden by defining the properties <span
+ style="font-family: monospace;">keros-project.sub-project.HOME</span>
+and <span style="font-family: monospace;">keros-project.sub-project.INCLUDES</span>.&nbsp;
+You
+may
+also force this to not run by defining the property <span
+ style="font-family: monospace;">keros-project.sub-projects.SKIP</span>
+(set it to any value).<br>
+<h4><a name="Compiling_Java_Subprojects"></a>Compiling Java</h4>
+Depending on where Ivy downloads artifacts (such as Jars), the Java
+"library" property will need to reflect this directory. &nbsp; Please
+examine the following code snippet:<br>
+<span style="font-family: monospace;"><br>
+<span style="font-weight: bold;">&nbsp;&nbsp;&nbsp; &lt;property&nbsp;
+name = "keros-project.lib.HOME"&nbsp; value = "../lib"/&gt;</span><br>
+<br>
+&nbsp;&nbsp;&nbsp; &lt;dirname&nbsp; file = "${ant.file}"&nbsp;
+property = "HOME"/&gt;<br>
+<br>
+&nbsp;&nbsp;&nbsp; &lt;import&nbsp; file =
+"../keros-1.0/ant/keros.xml"&nbsp; description = "Need Keros for
+building"/&gt;<br>
+<br>
+&nbsp;&nbsp;&nbsp; &lt;ivy:resolve&nbsp;&nbsp; type = "jar"&nbsp; file
+= "${HOME}/ivy.xml"/&gt;<br>
+&nbsp;&nbsp;&nbsp; &lt;ivy:retrieve&nbsp; type = "jar"&nbsp; file =
+"${HOME}/ivy.xml"&nbsp; <span style="font-weight: bold;">pattern =
+"../lib/[artifact].[ext]"/&gt;</span><br style="font-weight: bold;">
+<br>
+&nbsp;&nbsp;&nbsp; &lt;import&nbsp; file =
+"../keros-1.0/ant/keros-project.xml"&nbsp; description = "Need Keros
+for building"/&gt;<br>
+</span><br>
+Above, <a href="http://ant.apache.org/ivy/index.html">Ivy</a> is
+defined to retrieve to the directory <span
+ style="font-family: monospace;">../lib</span>.&nbsp; Therefore in
+order for the Keros target <a
+ href="keros-project.html#keros-project.compile.java">keros-project.compile.java</a>
+to compile correctly the Java "library" property, <span
+ style="font-family: monospace;"><span style="font-weight: bold;">keros-project.lib.HOME</span></span>,
+is
+set
+to <span style="font-family: monospace;">../lib</span>. <br>
+<h4><a name="Directory_Properties"></a>Directories</h4>
+<a href="index.html">Keros</a> defines properties denoting default
+directory locations (for example <span style="font-family: monospace;"><span
+ style="font-weight: bold;">keros-project.lib.HOME</span></span>) and
+denoted with the word "<span style="font-family: monospace;">HOME</span>."&nbsp;
+Should
+the
+defaults not reflect a project's actual directory, one
+should specify the property's value prior to including <span
+ style="font-family: monospace;">keros.xml</span> and/or <span
+ style="font-family: monospace;">keros-project.xml</span>.&nbsp; Above
+in <span style="text-decoration: underline;"></span><a
+ href="#Compiling_Java">Compiling Java</a>,&nbsp; <span
+ style="font-family: monospace;"><span style="font-weight: bold;">keros-project.lib.HOME
+</span></span>defines the library home to be <span
+ style="font-family: monospace;">../lib</span>.<br>
+<h3><a name="Releases"></a>Releases</h3>
+<a href="index.html">Keros</a> will generate various release
+types:&nbsp; <a href="keros-project.html#keros-project.release.java">java</a>,
+<a href="keros-project.html#keros-project.release.document">document</a>,
+and
+<a href="keros-project.html#keros-project.release.source">source</a>
+(each utilizes the macrodef <a href="keros.html#release">release</a>).&nbsp;
+All
+define
+their own paths that are used when building the release type
+to copy files to include in the release.&nbsp; Each path is defined by
+an id and a property whose value is that of the id for the path.&nbsp;
+For example, consider the <a
+ href="keros-project.html#keros-project.release.source">source</a>
+release.&nbsp; The following represents its path, path property and
+target:<br>
+<br>
+<span style="font-family: monospace;">&lt;path&nbsp; id = "<span
+ style="font-weight: bold;">keros-project.release.source.path.REF_ID</span>"&nbsp;
+description
+=
+"Default path for a source release."&gt;</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; &lt;fileset
+dir = "${keros-project.project.HOME}"&nbsp; includes =
+"${keros-project.src.DIR_NAME}/**"&nbsp;&nbsp; excludes =
+"${keros-project.src.release.EXCLUDES}"/&gt;</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; &lt;fileset
+dir = "${keros-project.project.HOME}"&nbsp; includes =
+"${keros-project.test.DIR_NAME}/**"&nbsp; excludes =
+"${keros-project.src.release.EXCLUDES}"/&gt;</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; &lt;fileset
+dir = "${keros-project.project.HOME}"&nbsp; includes =
+"${keros-project.lib.DIR_NAME}/**"&nbsp;&nbsp; excludes =
+"${keros-project.src.release.EXCLUDES}"/&gt;</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; &lt;fileset
+dir = "${keros-project.project.HOME}"&nbsp; includes = "build.xml"/&gt;</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; &lt;fileset
+dir = "${keros-project.project.HOME}"&nbsp; includes = "ivy.xml"/&gt;</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&lt;/path&gt;</span><br
+ style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">&lt;keros:auto-property&nbsp;
+property = "<span style="font-weight: bold;">keros-project.release.source.PATH</span>"&nbsp;
+default
+=
+"keros-project.release.source.path.REF_ID"&nbsp; description
+= "Property that holds the name of the source release's path ref
+id."/&gt;<br>
+<br>
+&lt;target&nbsp; name = "keros-project.release.source"&nbsp; unless =
+"keros-project.release.source.SKIP"&nbsp; description = "Create a
+source release"&gt;<br>
+&nbsp;&nbsp;&nbsp; &lt;keros:release&nbsp; base-file =
+"${keros-project.release.src.FILE_NAME}"&nbsp; base-dir =
+"${keros-project.src.release.BASE_DIR}"&nbsp; dir =
+"${keros-project.src.release.generated.HOME}"&nbsp; stage-dir =
+"${keros-project.release.HOME}"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;keros:release-fileset&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;path&nbsp; refid = "<span style="font-weight: bold;">${keros-project.release.source.PATH}</span>"/&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;/keros:release-fileset&gt;<br>
+&nbsp;&nbsp;&nbsp; &lt;/keros:release&gt;<br>
+&lt;/target&gt;<br>
+</span><br>
+As can be seen, a <a
+ href="keros-project.html#keros-project.release.source">source</a>
+release uses whatever path is contained in the property <span
+ style="font-family: monospace;">${keros-project.release.source.PATH}</span>.&nbsp;
+To
+modify
+what files are included as part of a release, modify the
+appropriate property and define your own path.&nbsp; Here is an example
+that includes the 1.2 release of <a href="index.html">Keros</a> as
+part of a <a href="keros-project.html#keros-project.release.source">source</a>
+release:<br>
+<br>
+<span style="font-family: monospace;">&lt;path&nbsp; id = "<span
+ style="font-weight: bold;">jplate.release.source.path.REF_ID</span>"&nbsp;
+description
+=
+"Source path for JPlate..."&gt;</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; <span
+ style="font-weight: bold;">&lt;path&nbsp; refid =
+"keros-project.release.source.path.REF_ID"/&gt;</span></span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+&lt;fileset&nbsp; dir = "${keros.build.HOME}"&nbsp; includes =
+"${jplate.keros.HOME}/**"/&gt;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&lt;/path&gt;</span><br
+ style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">&lt;keros:set-property&nbsp;
+property = "<span style="font-weight: bold;">keros-project.release.source.PATH</span>"&nbsp;
+value
+=
+"<span style="font-weight: bold;">jplate.release.source.path.REF_ID</span>"/&gt;</span><br>
+<h3><a name="Building_Keros"></a>Building Keros</h3>
+There are a few ways to build <a href="index.html">Keros</a>:<br>
+<ul>
+  <li>Get the latest source from Subversion:&nbsp; <small><span
+ style="font-family: Courier New,Courier,monospace;">svn co
+https://keros.svn.sourceforge.net/svnroot/keros/trunk</span></small></li>
+  <li>Get the source for this release from Subversion:&nbsp; <small><span
+ style="font-family: Courier New,Courier,monospace;">svn co
+https://keros.svn.sourceforge.net/svnroot/keros/branches/keros-@keros-project.release.VERSION@</span></small></li>
+  <li><a
+ href="http://sourceforge.net/project/showfiles.php?group_id=214037">Download
+the
+source</a>.&nbsp; Please note if you download the source you will
+need to skip building the <a href="http://subversion.tigris.org/">Subversion</a>
+log as there will not be the appropriate files/directories in this
+download (you will get an error).&nbsp; To do so, simply define the
+environment variable <span style="font-family: monospace;">keros-project.document.svn.SKIP</span>
+setting it to any value.<br>
+  </li>
+</ul>
+Once you have a copy of the source (and unpacked if you downloaded),
+execute <a href="http://ant.apache.org/">Ant</a> against the <small><span
+ style="font-family: Courier New,Courier,monospace;">build.xml</span></small>
+contained in the same directory holding the directory entitled <small><span
+ style="font-family: Courier New,Courier,monospace;">src</span></small>.&nbsp;
+No
+additional
+parameters are required.<br>
+<br>
+<ul>
+  <ul>
+  </ul>
+</ul>
+<br>
+<p align="center"><a href="http://sourceforge.net/"><img
+ src="http://sourceforge.net/sflogo.php?group_id=214037&amp;type=6"
+ name="graphics1" alt="SourceForge.net Logo" height="62" width="210"
+ align="bottom" border="0"></a></p>
+</body>
+</html>

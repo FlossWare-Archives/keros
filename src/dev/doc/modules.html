@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <title>Modules</title>
+  <meta content="sfloess" name="author">
+  <meta content="Contains modules information regarding Keros"
+ name="description">
+</head>
+<body dir="ltr"
+ style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);"
+ alink="#ee0000" lang="en-US" link="#0000ee" vlink="#551a8b">
+<h1 align="center">Keros @keros-project.release.VERSION@</h1>
+<h1 align="center">Modules<br>
+</h1>
+<ul>
+</ul>
+<h2>Project Modules</h2>
+&nbsp; Keros
+is divided into the following modules:<br>
+<h3><a name="Ant"></a>Ant<br>
+</h3>
+The <a href="http://ant.apache.org/">Ant</a> modules are divided into
+logical file types as follows:<br>
+<ul>
+</ul>
+<ul>
+</ul>
+<ul>
+</ul>
+<ul>
+  <li><a href="build.html">Build</a>:&nbsp; Main build script
+for Keros.</li>
+  <li><a href="keros.html">Keros core functionality</a>:&nbsp; Contains
+reusable macrodefs/properties - useful for most projects.&nbsp; Only
+one target is defined:&nbsp; it prints properties related to this
+file.<br>
+  </li>
+  <li><a href="keros-project.html">Keros Project</a>:&nbsp; Contains <a
+ href="http://ant.apache.org/">Ant</a> tasks for useful development
+related features such as compiling, building releases, etc.&nbsp; The
+contents of this file are probably "good enough" for most development
+environments.&nbsp; Keros itself
+uses this file internally for building releases and testing.</li>
+</ul>
+<ul>
+</ul>
+<h3><a name="Resources"></a>Resources</h3>
+<div style="text-align: justify;">This module contains
+internationalized messages used by the above <a
+ href="http://ant.apache.org/">Ant</a> modules and are divided
+into sub-directories by locale (for example <span
+ style="font-family: monospace;">en_US</span> for the U.S. locale).<span
+ style="font-weight: normal;">&nbsp; Resource files are named like <font
+ size="-1"><span style="font-family: Courier New,Courier,monospace;">keros*-messages.xml
+</span></font>- for example <font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros-messages.xml</span></font>
+or </span><span style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros-project-messages.xml</span></font></span><span
+ style="font-weight: normal;">.</span>
+</div>
+<h3><a name="XSLT"></a>XSLT</h3>
+This module contains reusable <a href="http://www.w3.org/TR/xslt">XSLT</a>'s
+as follows:
+<ul>
+  <li>ant2html.xsl:&nbsp; An&nbsp;<a href="http://www.w3.org/TR/xslt">XSLT</a>
+capable of converting an <a href="http://ant.apache.org/">Ant</a>
+script
+into a meaningful HTML representation.&nbsp; The macro <a
+ href="keros.html#ant2html">ant2html</a> 
+generates HTML against the aforementioned <a
+ href="http://ant.apache.org/">Ant</a> modules defined
+above.</li>
+</ul>
+<ul>
+  <li>svn2html.xsl:&nbsp; An <a href="http://www.w3.org/TR/xslt">XSLT</a>
+capable of converting a <a href="http://subversion.tigris.org/">Subversion</a>
+log history into a meaning HTML representation.&nbsp; <span
+ style="font-style: italic;"><span style="font-weight: bold;">Please
+note:</span></span>&nbsp; to use this <a
+ href="http://www.w3.org/TR/xslt">XSLT</a>, it is assumed an XML log
+file is generated from <a href="http://subversion.tigris.org/">Subversion</a>
+similar to:</li>
+</ul>
+<div style="margin-left: 80px;">
+<pre>svn log [dir] --xml -r [revision start]:[revision end] -v<br></pre>
+</div>
+<div style="margin-left: 40px;">The macro <a
+ href="keros.html#svn2html">svn2html</a>
+uses the macro <a href="keros.html#svn-xml-log">svn-xml-log</a><span
+ style="text-decoration: underline;"><span
+ style="text-decoration: underline;"><span
+ style="text-decoration: underline;"></span></span></span> to generate <a
+ href="svn-log.html">the Subversion log for this release</a>.
+</div>
+<br>
+<p align="center"><a href="http://sourceforge.net/"><img
+ src="http://sourceforge.net/sflogo.php?group_id=214037&amp;type=6"
+ name="graphics1" alt="SourceForge.net Logo" align="bottom" border="0"
+ height="62" width="210"></a></p>
+</body>
+</html>

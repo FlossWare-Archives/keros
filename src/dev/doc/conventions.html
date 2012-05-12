@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <title>Conventions</title>
+  <meta content="sfloess" name="author">
+  <meta content="Contains conventions information regarding Keros"
+ name="description">
+</head>
+<body dir="ltr"
+ style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);"
+ alink="#ee0000" lang="en-US" link="#0000ee" vlink="#551a8b">
+<h1 align="center">Keros @keros-project.release.VERSION@</h1>
+<h1 align="center">Conventions<br>
+</h1>
+<ul>
+</ul>
+<h2>Project Conventions</h2>
+Keros strives to adhere to various
+conventions as described below.<br>
+<h3><a name="Directory_names"></a>Directory names</h3>
+Directory names should reflect the contents of those directories:<br>
+<ul>
+  <li>lib:&nbsp; where applicable, all necessary 3rd party libraries.<br>
+  </li>
+  <li>src:&nbsp; root directory for all source files.</li>
+  <li>src/dev:&nbsp; root directory where releasable development work
+is developed.<br>
+  </li>
+  <li>src/dev/ant: <a href="http://ant.apache.org/">Ant</a> source
+files.</li>
+  <li>src/dev/doc:&nbsp; documentation.</li>
+  <li>src/dev/resources:&nbsp; root directory for all resource files.</li>
+  <li>src/dev/resources/en_US:&nbsp; messages for the U.S. locale.</li>
+  <li>src/dev/xsl:&nbsp; all XSLT transformations.</li>
+  <li>src/test:&nbsp; root directory for all unit test cases.</li>
+  <li>src/test/ant:&nbsp; directory containing <a
+ href="http://ant.apache.org/">Ant</a> unit test cases.</li>
+  <li>src/test/java:&nbsp; directory containing Java code to test
+availability of Find Bugs.</li>
+  <li>src/test/javac:&nbsp; directory containing JavaCC code to test
+the ability to generate parsers.</li>
+  <li>src/test/resources:&nbsp; directory containing resource related
+data for unit tests.<br>
+  </li>
+</ul>
+<h3><a name="File_names"></a>File names</h3>
+Files adhere to
+the following naming conventions:<br>
+<ul>
+  <li><a href="http://ant.apache.org/">Ant</a> <span
+ style="font-weight: normal;">scripts:&nbsp; </span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros</span></font></span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">*.xml </span></font></span><span
+ style="font-weight: normal;">-
+i.e. </span><span style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros</span></font></span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">.xml </span></font></span><span
+ style="font-weight: normal;">(reusable scripting) or </span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros</span></font></span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">-project.xml</span></font></span><span
+ style="font-weight: normal;"> (development related).<span
+ style="font-weight: bold;"></span></span><span
+ style="font-weight: normal;"></span></li>
+  <li><span style="font-weight: normal;">Resource files:&nbsp; </span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros</span></font></span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">*-messages.xml </span></font>-
+i.e.&nbsp;<font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;"></span></font></span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros</span></font></span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">-messages.xml</span></font>
+or </span><span style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros</span></font></span><span
+ style="font-weight: normal;"><font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">-project-messages.xml</span></font></span><span
+ style="font-weight: normal;">.
+It is important to note that resources belong in a directory named
+after the appropriate locale - for example <font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">en_US</span></font>
+for the United States.<br>
+    </span></li>
+</ul>
+<h3><a name="Property_Names"></a>Property Names</h3>
+Properties are named as follows:<br>
+<ul>
+  <li>File based:&nbsp; [xml file name].[type].[property name] - for
+example <span style="font-family: Courier New,Courier,monospace;">keros-project.locale.HOME</span></li>
+  <li>Macrodef based:&nbsp; [xml file name].[macro name].[property
+name] - for example <span
+ style="font-family: Courier New,Courier,monospace;">keros.svn-xml-log.SVN_LOG_DIR</span><br>
+  </li>
+</ul>
+<h3><a name="Property_Types"></a>Properties<br>
+</h3>
+<h4 style="margin-left: 40px;"><a name="User_Definable_Properties"></a>User
+Definable Properties</h4>
+<div style="margin-left: 40px;">User definable properties are those
+that can be defined value outside Keros.&nbsp;
+If not defined,
+reasonable default values are used.<br>
+<br>
+There are three ways to express values for user definable properties:<br>
+</div>
+<ul style="margin-left: 40px;">
+  <li>System properties, for example using the -D command line option
+when invoking <a href="http://ant.apache.org/">Ant</a> or java:</li>
+</ul>
+<div style="margin-left: 120px;"><span
+ style="font-family: Courier New,Courier,monospace;"><font size="-1">ant
+-Dkeros-project.java.src.DIR_NAME=MySrcDir</font></span></div>
+<ul style="margin-left: 40px;">
+  <li>Environment variables:</li>
+</ul>
+<div style="margin-left: 80px;">
+<div style="margin-left: 40px;"><span
+ style="font-family: Courier New,Courier,monospace;"><small>export
+keros-project.java.src.DIR_NAME=MySrcDir</small></span><br>
+<span style="font-family: Courier New,Courier,monospace;"><small>ant</small></span><br>
+<span style="font-family: Courier New,Courier,monospace;"></span></div>
+<span style="font-family: Courier New,Courier,monospace;"></span></div>
+<ul style="margin-left: 40px;">
+  <li><a href="http://ant.apache.org/">Ant</a> properties:</li>
+</ul>
+<div style="margin-left: 120px;"><span
+ style="font-family: Courier New,Courier,monospace;"><small>&lt;property&nbsp;
+name = "SomeProperty"&nbsp; value = "SomeValue"/&gt;</small></span><br>
+</div>
+<h4 style="margin-left: 40px;"><a name="Fixed_Properties"></a>"Fixed"
+Properties</h4>
+<div style="margin-left: 40px;">Fixed properties are those that are set
+by Keros
+to predefined values.&nbsp; Often fixed properties are expressed using
+some user definable properties to create values.&nbsp; <span
+ style="font-weight: bold;">Please note:</span>&nbsp; if a fixed
+property currently has a value, it is reset with a new one as defined
+by Keros.<br>
+</div>
+<h4 style="margin-left: 40px;"><a name="Variables"></a>Variables</h4>
+<div style="margin-left: 40px;">Variables are properties used within
+macrodef's.&nbsp; These properties
+will <span style="font-style: italic;"><span style="font-weight: bold;">always</span></span>
+be overwritten for each call of a macrodef.&nbsp; The naming convention
+reflects [XML file name (minus dot XML)].[macrodef name].[variable
+name] - for example <span style="font-family: monospace;">keros.unpack-bz2.BZ2_TAR_FILE_NAME</span><br>
+</div>
+<h3><a name="Deriving_Directory_Information"></a>Deriving Directory
+Information</h3>
+Properties holding directory information are typically named using a
+summation strategy:&nbsp; definition of a directory name and a "home"
+using this name.&nbsp; Additionally, directories may be defined
+relative to a "root" or home directory.&nbsp; For example:<br>
+<div style="margin-left: 40px;"><font
+ style="font-family: Courier New,Courier,monospace;" size="-1">keros-project.project.HOME</font><span
+ style="font-family: Courier New,Courier,monospace;">
+= [some directory]</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<font style="font-family: Courier New,Courier,monospace;" size="-1">keros-project.assembly.DIR_NAME</font><span
+ style="font-family: Courier New,Courier,monospace;">
+= "assembly"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<font style="font-family: Courier New,Courier,monospace;" size="-1">keros-project.assembly.HOME</font><span
+ style="font-family: Courier New,Courier,monospace;">
+= "</span><font style="font-family: Courier New,Courier,monospace;"
+ size="-1">${keros-project.project.HOME}/${keros-project.assembly.DIR_NAME}</font><span
+ style="font-family: Courier New,Courier,monospace;">"</span><br>
+</div>
+<h3><a name="Building_and_skipping"></a>Building and "skipping"<br>
+</h3>
+The build script, <font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">keros-project.xml</span></font>,
+contains reusable targets and dependencies that follow a named pattern
+in the form of <font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">[xml file
+name].verb.noun</span></font>
+(for example <font style="font-family: Courier New,Courier,monospace;"
+ size="-1">keros-project.document.svn</font>).&nbsp; To skip execution
+of targets
+(either directly or through a dependency), most targets make use of the
+<font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">unless</span></font>
+attribute.&nbsp; For example <font size="-1"><span
+ style="font-family: Courier New,Courier,monospace;">&lt;target&nbsp; <span
+ style="font-weight: bold;">name = "keros-project.document.svn"</span>&nbsp;
+<span style="font-weight: bold;">unless =
+"keros-project.document.svn.SKIP"</span>...&gt;</span></font>&nbsp;
+Here
+are a few
+examples:<br>
+<br>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top; text-align: center;"><span
+ style="font-weight: bold;">Target Name</span><br>
+      </td>
+      <td style="vertical-align: top; text-align: center;"><span
+ style="font-weight: bold;">Unless Attribute</span><br>
+      </td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; font-family: Courier New,Courier,monospace;"><font
+ size="-1">keros-project.document.svn</font></td>
+      <td
+ style="vertical-align: top; font-family: Courier New,Courier,monospace;"><font
+ size="-1">keros-project.document.svn</font><font size="-1">.SKIP</font></td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; font-family: Courier New,Courier,monospace;"><font
+ size="-1">keros-project.compile.java</font></td>
+      <td
+ style="vertical-align: top; font-family: Courier New,Courier,monospace;"><font
+ size="-1">keros-project.compile.java</font><font size="-1">.SKIP</font></td>
+    </tr>
+    <tr>
+      <td
+ style="vertical-align: top; font-family: Courier New,Courier,monospace;"><font
+ size="-1">keros-project.jar.java</font></td>
+      <td
+ style="vertical-align: top; font-family: Courier New,Courier,monospace;"><font
+ size="-1">keros-project.jar</font><font size="-1">.SKIP</font></td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<ul>
+  <ul>
+  </ul>
+</ul>
+<br>
+<p align="center"><a href="http://sourceforge.net/"><img
+ src="http://sourceforge.net/sflogo.php?group_id=214037&amp;type=6"
+ name="graphics1" alt="SourceForge.net Logo" align="bottom" border="0"
+ height="62" width="210"></a></p>
+</body>
+</html>

@@ -1,0 +1,6 @@
+<ivy-module  version = "2.0">
+    <info  organisation = "Keros"  module = "FindBugs"/>
+    <dependencies>
+        <dependency  org = "net.sourceforge.findbugs"  name = "findbugs"  rev = "1.2.0"/>
+    </dependencies>
+</ivy-module>

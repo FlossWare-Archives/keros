@@ -1,0 +1,115 @@
+<!--
+
+    Source related project...
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/projects/keros-source-project.xml $
+        
+-->
+<project
+    name    = "keros-source-project"
+    default = "keros-source-project.release"
+    basedir = "."
+    
+    xmlns:ant-contrib          = "http://ant-contrib.sourceforge.net"
+    xmlns:keros                = "http://keros.sourceforge.net"
+    xmlns:keros-base-project   = "http://keros.sourceforge.net/project"
+    xmlns:keros-source-project = "http://keros.sourceforge.net/project/source">
+
+
+    <description>
+        Keros project for source files.
+    </description>
+
+
+    <!--
+
+        Imports...
+
+    -->
+    <import  file = "../keros-base-project.xml"  description = "Contains Keros project definitions."/>
+
+    <keros:auto-property  property = "keros-source-project.DIR_NAME"     default = "src"/>
+    <keros:auto-property  property = "keros-source-project.HOME"         default = "${keros-base-project.HOME}/${keros-source-project.DIR_NAME}"/>
+
+
+    <!-- ======================================================================== -->
+
+    <keros:auto-property  property = "keros-source-project.release.EXCLUDES"  default = ".svn, .cvs, .git"/>
+
+
+    <path  id = "keros-source-project.release.path.REF_ID"  description = "Default path for a source release.">
+        <path location = "${keros-source-project.HOME}"/>
+        <path location = "${keros-base-project.lib.HOME}"/>
+        
+        <filelist dir = "${keros-base-project.HOME}"  files = "build.xml ivy.xml"/>
+    </path>
+
+    <keros:auto-property  property = "keros-source-project.release.PATH"  default = "keros-source-project.release.path.REF_ID"  description = "Property that holds the name of the source release's path ref id."/>
+
+
+
+    <keros:auto-property  property = "keros-source-project.release.generated.DIR_NAME"  default = "source"/>
+    <keros:auto-property  property = "keros-source-project.release.generated.HOME"      default = "${keros-base-project.release.generated.HOME}/${keros-source-project.release.generated.DIR_NAME}"/>
+
+
+    <!--
+
+        If a release version has been defined, we will set our default
+        release source name to be the project name PLUS the version
+        number...  otherwise its just the project directory name.
+
+    -->
+    <ant-contrib:if>
+        <not>
+            <isset  property = "keros-source-project.release.FILE_NAME"/>
+        </not>
+
+        <ant-contrib:then>
+            <keros:conditional-set-property  property = "keros-source-project.release.VERSION"  name = "keros-source-project.release.FILE_NAME"  set = "${keros-source-project.project.DIR_NAME}-source-${keros-source-project.release.VERSION}"  unset = "${keros-source-project.project.DIR_NAME}-source"/>
+
+            <keros:conditional-set-property  property = "keros-source-project.release.PREFIX"   name = "keros-source-project.release.FILE_NAME"  set = "${keros-source-project.release.PREFIX}${keros-source-project.release.FILE_NAME}"  unset = "${keros-source-project.release.FILE_NAME}"/>
+
+            <keros:conditional-set-property  property = "keros-source-project.release.POSTFIX"  name = "keros-source-project.release.FILE_NAME"  set = "${keros-source-project.release.FILE_NAME}${keros-source-project.release.POSTFIX}"  unset = "${keros-source-project.release.FILE_NAME}"/>
+        </ant-contrib:then>
+    </ant-contrib:if>
+
+
+    <!--
+
+        Provides default logic for creating source releases...
+
+    -->
+    <target  name = "keros-source-project.release"  unless = "keros-source-project.release.SKIP"  description = "Called to generate">
+        <keros:release  base-file = "${keros-source-project.release.FILE_NAME}"  base-dir = "${keros-source-project.release.FILE_NAME}"  dir = "${keros-source-project.release.generated.HOME}"  stage-dir = "${keros-base-project.release.HOME}">
+            <keros:release-fileset>
+                <path  refid = "${keros-source-project.release.PATH}"/>
+            </keros:release-fileset>
+        </keros:release>
+    </target>
+
+
+    <target  name = "keros-base-project.release" depends = "keros-source-project.release"/>
+
+
+    <!--
+
+        Will print all properties to the console.
+
+    -->
+    <target  name = "keros-source-project.print.properties"  description = "Converts Ant scripts to HTML">
+        <echo>
+            ------------------------------------------------------------------
+
+                           KEROS SOURCE PROJECT PROPERTIES
+
+            ------------------------------------------------------------------
+
+            keros-source-project.DIR_NAME  =  ${keros-source-project.DIR_NAME}
+            keros-source-project.HOME      =  ${keros-source-project.HOME}
+        </echo>
+    </target>
+</project>

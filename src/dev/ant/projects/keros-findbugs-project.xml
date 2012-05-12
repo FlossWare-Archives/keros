@@ -1,0 +1,63 @@
+<!--
+
+    For FindBugs projects...
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/projects/keros-findbugs-project.xml $
+        
+-->
+<project
+    name    = "keros-findbugs-project"
+    default = "keros-findbugs-project.all"
+    
+    xmlns:ivy                    = "antlib:org.apache.ivy.ant"
+    xmlns:find-bugs              = "http://findbugs.sourceforge.net"
+
+    xmlns:keros-base-project     = "http://keros.sourceforge.net/project"
+    xmlns:keros-java-project     = "http://keros.sourceforge.net/project/java"
+    xmlns:keros-findbugs-project = "http://keros.sourceforge.net/project/findbugs"
+    xmlns:keros                  = "http://keros.sourceforge.net">
+
+
+    <description>
+        Keros FindBugs related project work...
+    </description>
+
+
+    <!--
+
+        Imports...
+
+    -->
+    <import  file = "keros-java-project.xml"  description = "Contains Keros Java project functionality."/>
+
+    <dirname   file = "${ant.file.keros-findbugs-project}"  property = "keros-findbugs-project.HOME"  description = "Directory where self exists"/>
+
+    <ivy:resolve   type = "jar"  file = "${keros-findbugs-project.HOME}/keros-findbugs-ivy.xml"/>
+    <ivy:retrieve  type = "jar"  file = "${keros-findbugs-project.HOME}/keros-findbugs-ivy.xml"  pattern = "${keros.dependency.HOME}/[artifact].[ext]"/>
+
+    <!--
+        Define Find Bugs...
+    -->
+    <taskdef  name = "analyze"  classname = "edu.umd.cs.findbugs.anttask.FindBugsTask"  uri = "http://findbugs.sourceforge.net"  description = "Needed to use FindBugs.">
+        <classpath>
+            <fileset  dir = "${keros.dependency.HOME}"  includes = "*.jar"/>
+        </classpath>
+    </taskdef>
+
+
+    <!--
+        This will analyze Java source...
+    -->
+    <target  name = "keros-findbugs-project.analyze"  depends = "keros-java-project.library"  description = "Override to define what analysis should occur">
+        <find-bugs:analyze  home = "${keros.dependency.HOME}"  output = "text"  reportLevel = "low"  effort = "max"  failOnError = "true">
+            <find-bugs:class       location = "${keros-java-project.jar.FILE}"/>
+            <find-bugs:sourcePath  path     = "${keros-java-project.source.PATH}"/>
+        </find-bugs:analyze>
+    </target>
+
+    <target  name = "keros-base-project.analyze"  depends = "keros-findbugs-project.analyze"  description = "Overridden to define what analysis should occur"/>
+</project>

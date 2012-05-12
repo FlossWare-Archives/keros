@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <title>Projects</title>
+  <meta content="sfloess" name="author">
+  <meta content="Contains project(s) information regarding Keros"
+ name="description">
+</head>
+<body dir="ltr"
+ style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);"
+ lang="en-US" link="#0000ee" vlink="#551a8b" alink="#ee0000">
+<h1 align="center">Keros @keros-project.release.VERSION@</h1>
+<h1 align="center">Projects<br>
+</h1>
+<ul>
+</ul>
+<a name="Projects"></a>Starting with <a
+ href="http://keros.sourceforge.net/keros-1.3/index.html">Keros 1.3</a>,
+the
+concept of project has been decoupled from the now defunct <span
+ style="font-family: monospace;">keros-project.xml</span> and
+encapsulated into separate files that provide proper
+separation of concerns.&nbsp; The various project types are listed
+below:<br>
+<h2><a name="keros-base-project"></a>keros-base-project.xml</h2>
+This is a slimmed down version of <span style="font-family: monospace;">keros-project.xml</span>
+and is imported by all project files.&nbsp; This script defines some
+common project properties, such as directories, as well as the
+following project
+lifecycle targets:<br>
+<ol>
+  <li>keros-base-project.all:&nbsp; this is the default target
+depending on the subsequent targets that follow (and in the order
+listed below).<br>
+  </li>
+  <li>keros-base-project.clean:&nbsp; removes the directory <span
+ style="font-family: monospace;">${keros-base-project.generated.HOME}</span>.<br>
+  </li>
+  <li>keros-base-project.generate:&nbsp; empty target.&nbsp; Should be
+overridden when some form of generation is to occur (for example
+JavaCC).<br>
+  </li>
+  <li>keros-base-project.compile:&nbsp; empty target.&nbsp; Should be
+overriden when something is to be compiled (for example javac).<br>
+  </li>
+  <li>keros-base-project.test:&nbsp; empty target.&nbsp; Should be
+overriden when some form of testing is to occur (for example JUnit).<br>
+  </li>
+  <li>keros-base-project.document:&nbsp; empty target.&nbsp; Should be
+overridden when documentation is to be emitted (for example Javadoc,
+converting Subversion logs to HTML or an Ant script to HTML).<br>
+  </li>
+  <li>keros-base-project.analyze:&nbsp; empty target.&nbsp; Should be
+overriden when some form of analysis should occur (for example
+FindBugs).<br>
+  </li>
+  <li>keros-base-project.sub-projects:&nbsp; empty target.&nbsp; Should
+be overridden when sub-projects are to be processed.<br>
+  </li>
+  <li>keros-base-project.release:&nbsp; empty target.&nbsp; should be
+overridden for appropriate release types.</li>
+</ol>
+<span style="font-weight: bold; font-style: italic;">Please note:</span>&nbsp;
+in most instances, the project types listed below will, when
+appropriate, override targets listed above as "should be overridden."<br>
+<br>
+<br>
+<p align="center"><a href="http://sourceforge.net/"><img
+ src="http://sourceforge.net/sflogo.php?group_id=214037&amp;type=6"
+ name="graphics1" alt="SourceForge.net Logo" height="62" width="210"
+ align="bottom" border="0"></a></p>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!--
+
+    For JavaCC projects...
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/projects/keros-javacc-project.xml $
+        
+-->
+<project
+    name    = "keros-javacc-project"
+    default = "keros-javacc-project.all"
+    
+    xmlns:ivy                  = "antlib:org.apache.ivy.ant"
+    xmlns:ant-contrib          = "http://ant-contrib.sourceforge.net"
+
+    xmlns:keros-base-project   = "http://keros.sourceforge.net/project"
+    xmlns:keros-java-project   = "http://keros.sourceforge.net/project/java"
+    xmlns:keros-javacc-project = "http://keros.sourceforge.net/project/javacc"
+    xmlns:keros                = "http://keros.sourceforge.net">
+
+
+    <description>
+        Keros JavaCC related project work...
+    </description>
+
+
+    <!--
+
+        Imports...
+
+    -->
+    <import  file = "keros-java-project.xml"  description = "Contains Keros Java project functionality."/>
+
+    <dirname   file = "${ant.file.keros-javacc-project}"  property = "keros-javacc-project.HOME"  description = "Directory where self exists"/>
+
+    <ivy:resolve   type = "jar"  file = "${keros-javacc-project.HOME}/keros-javacc-ivy.xml"/>
+    <ivy:retrieve  type = "jar"  file = "${keros-javacc-project.HOME}/keros-javacc-ivy.xml"  pattern = "${keros.dependency.HOME}/[artifact].[ext]"/>
+
+    <!--
+
+        Source sub-directories...
+
+    -->
+    <keros:auto-property  property = "keros-javacc-project.source.DIR_NAME"  default = "javacc"/>
+    <keros:auto-property  property = "keros-javacc-project.source.HOME"      default = "${keros-base-project.dev.HOME}/${keros-javacc-project.source.DIR_NAME}"/>
+
+    <!--
+
+        Generated sub-directories...
+
+    -->
+    <keros:auto-property  property = "keros-javacc-project.generated.DIR_NAME"  default = "${keros-javacc-project.source.DIR_NAME}"/>
+    <keros:auto-property  property = "keros-javacc-project.generated.HOME"      default = "${keros-base-project.generated.HOME}/${keros-javacc-project.generated.DIR_NAME}"/>
+
+    <keros:conditional-set-property  name = "keros-java-project.source.PATH"  property = "keros-java-project.source.PATH"  set = "${keros-java-project.source.PATH}:${keros-javacc-project.generated.HOME}"  unset = "${keros-base-project.java.source.HOME}"  is-warnable = "false"/>
+
+
+    <!--
+
+        Miscellaneous JavaCC properties...
+
+    -->
+    <keros:auto-property  property = "keros-javacc-project.STATIC"      default = "false"/>
+    <keros:auto-property  property = "keros-javacc-project.LISTFILES"   default = "true"/>
+
+    <!--
+
+        Defines a simpler javacc - acting similar to javacc.  One does not need to specify each and
+        every JavaCC file - simply provide a "root" or @{src-dir} location from which to start finding javacc
+        files for invocation with the javacc task.  The branch directory from @{dest-dir} is computed
+        from @{src-dir} and the javacc files found.
+
+
+        @Attributes
+            @attribute: @{src-dir}      = the directory from which to start searching for javacc files.
+
+            @attribute: @{javacc-home}  = the directory containing JavaCC.
+
+            @attribute: @{dest-dir}     = the directory where javacc should generate - this is really the root directory
+                                          from which javacc generation will be relative.
+
+            @attribute: @{static}       = static generation flag for javacc.
+
+            @attribute: @{listfiles}    = if set to true, information will be displayed as to which files are being javacc'd.
+
+            @attribute: @{description}  = information about calling this macro.
+
+
+        @Example
+            @example: @{src-dir}  = /foo/bar
+
+            @example: @{dest-dir} = /beta/theta
+
+            @example: javacc file found at /foo/bar/alpha/zeta/SomeFile.jj
+
+
+        @Result
+            @result: javacc generation will occur to /beta/theta/alpha/zeta
+
+
+    -->
+    <macrodef
+        name        = "javacc2java"
+        description = "Defines a simpler javacc - acting similar to javacc.  One does not need to specify each and every JavaCC file - simply provide a root or @{src-dir} location from which to start finding javacc files for invocation with the javacc task.  The branch directory from @{dest-dir} is computed from @{src-dir} and the javacc files found."
+        uri         = "http://keros.sourceforge.net/project/javacc">
+
+        <attribute  name = "src-dir"      description = "The directory from which to start searching for javacc files."/>
+        <attribute  name = "dest-dir"     description = "The directory where javacc should generate - this is really the root directory from which javacc generation will be relative."/>
+        <attribute  name = "javacc-home"  description = "The location where JavaCC is installed."/>
+        <attribute  name = "static"       default = "true"  description = "Static generation flag for javacc."/>
+        <attribute  name = "listfiles"    default = "true"  description = "If true, information will be displayed as to which files are being javac'd."/>
+        <attribute  name = "description"  default = ""      description = "Information about this macro call."/>
+
+        <sequential>
+            <!--
+
+            Ensure source dir exists...
+
+            -->
+            <ant-contrib:if  description = "See if the source dir exists">
+                <available  file = "@{src-dir}"/>
+
+                <ant-contrib:then>
+                    <!--
+
+                    Create our destination dir...
+
+                    -->
+                    <mkdir  dir = "@{dest-dir}"  description = "Create the destination directory"/>
+
+                    <ant-contrib:if>
+                        <not>
+                            <equals  arg1 = "@{listfiles}"  arg2 = "false"  casesensitive = "false"/>
+                        </not>
+
+                        <ant-contrib:then>
+                            <echo  message = "Generating JavaCC files:"/>
+                        </ant-contrib:then>
+                    </ant-contrib:if>
+
+                    <!--
+
+                    Loop through all javacc files to generate java source...
+
+                    -->
+                    <ant-contrib:for  param = "kerosJavaccSrcFile"  description = "Loop through all JavaCC files to generate java source">
+                        <ant-contrib:path>
+                            <fileset  dir = "@{src-dir}"  includes = "**/*.jj"/>
+                        </ant-contrib:path>
+
+                        <sequential>
+                            <keros:compute-branch  root = "@{src-dir}"  full-path = "@{kerosJavaccSrcFile}"   property = "keros.javacc2java.JAVACC_DEST_DIR_BRANCH"/>
+                            <keros:dirname  file = "@{dest-dir}/${keros.javacc2java.JAVACC_DEST_DIR_BRANCH}"  property = "keros.javacc2java.JAVACC_GENERATED_DIR"/>
+                            <mkdir dir = "${keros.javacc2java.JAVACC_GENERATED_DIR}"/>
+
+                            <ant-contrib:if  description = "Check to see if files should be listed when applying the JavaCC task">
+                                <not>
+                                    <equals  arg1 = "@{listfiles}"  arg2 = "false"  casesensitive = "false"/>
+                                </not>
+
+                                <ant-contrib:then>
+                                    <echo  message = "    @{kerosJavaccSrcFile} ==> ${keros.javacc2java.JAVACC_GENERATED_DIR}"/>
+                                </ant-contrib:then>
+                            </ant-contrib:if>
+
+                            <javacc  target = "@{kerosJavaccSrcFile}"  javacchome = "@{javacc-home}"  outputdirectory = "${keros.javacc2java.JAVACC_GENERATED_DIR}"  static = "@{static}"/>
+                        </sequential>
+                    </ant-contrib:for>
+                </ant-contrib:then>
+
+                <ant-contrib:else>
+                    <fail  message = "@{src-dir} DOES NOT EXIST!!!"/>
+                </ant-contrib:else>
+            </ant-contrib:if>
+        </sequential>
+    </macrodef>
+    
+
+
+    <!--
+
+        Will print all properties to the console.
+
+    -->
+    <target  name = "keros-javacc-project.print.properties"  description = "Converts Ant scripts to HTML">
+        <echo>
+            ------------------------------------------------------------------
+
+                                KEROS JAVACC PROPERTIES
+
+            ------------------------------------------------------------------
+
+            keros-javacc-project.source.DIR_NAME    = ${keros-javacc-project.source.DIR_NAME}
+            keros-javacc-project.source.HOME        = ${keros-javacc-project.source.HOME}
+
+            keros-javacc-project.generated.DIR_NAME = ${keros-javacc-project.generated.DIR_NAME}
+            keros-javacc-project.generated.HOME     = ${keros-javacc-project.generated.HOME}
+
+            keros-javacc-project.STATIC             = ${keros-javacc-project.STATIC}
+            keros-javacc-project.LISTFILES          = ${keros-javacc-project.LISTFILES}
+
+        </echo>
+    </target>
+
+
+    <!--
+
+        This will process generating Java for JavaCC...
+
+    -->
+    <target  name = "keros-javacc-project.generate"  unless = "keros-javacc-project.generate.SKIP"  description = "Generate Java files from JavaCC">
+        <keros-javacc-project:javacc2java  src-dir = "${keros-javacc-project.source.HOME}"  dest-dir = "${keros-javacc-project.generated.HOME}"  javacc-home = "${keros.dependency.HOME}"  static = "${keros-javacc-project.STATIC}"  listfiles = "${keros-javacc-project.LISTFILES}"  description = "Generated Java from JavaCC"/>
+    </target>
+
+
+    <target  name = "keros-base-project.generate"  depends = "keros-javacc-project.generate"/>
+</project>

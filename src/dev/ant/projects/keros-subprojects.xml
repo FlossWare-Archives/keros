@@ -1,0 +1,81 @@
+<!--
+
+    Iterates and processes all sub-projects.
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/projects/keros-subprojects.xml $
+        
+-->
+<project
+    name                = "keros-subproject"
+    default             = "keros-subproject.all"
+    basedir             = "."
+    
+    xmlns:ant-contrib        = "http://ant-contrib.sourceforge.net" 
+    xmlns:ivy                = "antlib:org.apache.ivy.ant"
+    xmlns:keros              = "http://keros.sourceforge.net"
+    xmlns:keros-base-project = "http://keros.sourceforge.net/project">
+
+
+    <description>
+        This will iterate and process all sub-projects.
+    </description>
+
+
+    <!--
+
+        Imports...
+
+    -->
+    <import  file = "../keros-base-project.xml"  description = "Contains Keros project functionality."/>
+
+    <!-- ======================================================================== -->
+
+
+    <!--
+
+        Provides default logic for processing sub-projects...
+
+    -->
+    <target  name = "keros-subprojects.sub-projects"  unless = "keros-subprojects.SKIP"  description = "Process sub-projects">
+        <ivy:buildlist  reference = "keros-subprojects.BUILD_LIST">
+            <fileset  dir = "${keros-subprojects.HOME}"  includes = "${keros-subprojects.INCLUDES}"  excludes = "build.xml"/>
+        </ivy:buildlist>
+
+        <subant  buildpathref = "keros-subprojects.BUILD_LIST">
+            <!--
+                Let the main build file the imported keros-base-project.xml control
+                building sub-projetcs.
+            -->
+            <property  name = "keros-subprojects.SKIP"  value = "true"/>
+        </subant>
+    </target>
+
+
+    <!-- ======================================================================== -->
+
+    <target  name = "keros-base-project.sub-projects"  depends = "keros-subprojects.sub-projects"  description = "Process sub-projects"/>
+
+
+    <!--
+
+        Will print all properties to the console.
+
+    -->
+    <target  name = "keros-subprojects.print.properties"  description = "Emit properties">
+        <echo>
+            ------------------------------------------------------------------
+
+                                KEROS SUBPROJECTS PROPERTIES
+
+            ------------------------------------------------------------------
+
+            keros-subprojects.HOME      =  ${keros-subprojects.HOME}
+            keros-subprojects.INCLUDES  =  ${keros-subprojects.INCLUDES}
+    </target>
+
+
+</project>

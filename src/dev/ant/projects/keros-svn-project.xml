@@ -1,0 +1,219 @@
+<!--
+
+    Handles managing Subversion.
+
+    Modifications:
+        $Date: 2010-01-31 14:12:51 -0500 (Sun, 31 Jan 2010) $
+        $Revision: 216 $
+        $Author: sfloess $
+        $HeadURL: https://keros.svn.sourceforge.net/svnroot/keros/trunk/src/dev/ant/projects/keros-svn-project.xml $
+        
+-->
+<project
+    name                    = "keros-svn-project"
+    default                 = "keros-svn-project.all"
+    
+    xmlns:ant-contrib        = "http://ant-contrib.sourceforge.net" 
+    xmlns:ivy                = "antlib:org.apache.ivy.ant"
+    xmlns:keros              = "http://keros.sourceforge.net"
+    xmlns:keros-base-project = "http://keros.sourceforge.net/project"
+    xmlns:keros-svn-project  = "http://keros.sourceforge.net/project/svn">
+
+
+    <description>
+        Keros Subversion project functionality
+    </description>
+
+
+    <!--
+
+        Imports...
+
+    -->
+    <import  file = "keros-document-project.xml"  description = "Contains Keros document project functionality."/>
+
+
+    <!-- ======================================================================== -->
+
+    <keros:auto-property  property = "keros-svn-project.generated.DIR_NAME"           default = "svn"/>
+    <keros:auto-property  property = "keros-svn-project.generated.HOME"               default = "${keros-base-project.generated.HOME}/${keros-svn-project.generated.DIR_NAME}"/>
+
+    <keros:auto-property  property = "keros-svn-project.document.generated.DIR_NAME"  default = "svn"/>
+    <keros:auto-property  property = "keros-svn-project.document.generated.HOME"      default = "${keros-document-project.generated.HOME}/${keros-svn-project.generated.DIR_NAME}"/>
+
+    <keros:auto-property  property = "keros-svn-project.source.DIR"                   default = "${keros-base-project.HOME}"/>
+    <keros:auto-property  property = "keros-svn-project.dest.DIR"                     default = "${keros-svn-project.document.generated.HOME}"/>
+
+    <keros:auto-property  property = "keros-svn-project.log.FILE_NAME"                default = "svn-log.xml"/>
+    <keros:auto-property  property = "keros-svn-project.log.FILE"                     default = "${keros-svn-project.generated.HOME}/${keros-svn-project.log.FILE_NAME}"/>
+
+    <keros:auto-property  property = "keros-svn-project.html.FILE_NAME"               default = "svn-log.html"/>
+    <keros:auto-property  property = "keros-svn-project.html.FILE"                    default = "${keros-svn-project.generated.HOME}/${keros-svn-project.html.FILE_NAME}"/>
+
+    <keros:auto-property  property = "keros-svn-project.document.INCLUDES"            default = "**/*.xml"/>
+
+    <keros:auto-property  property = "keros-svn-project.rev.START"                    default = "0"/>
+    <keros:auto-property  property = "keros-svn-project.rev.END"                      default = "HEAD"/>
+
+    <path  id = "keros-svn-project.release.path.REF_ID"  description = "Default path for an application release.">
+        <path  refid    = "${keros-document-project.release.PATH}"/>
+    </path>
+
+    <keros:auto-property  property = "keros-document-project.release.PATH"  default = "keros-svn-project.release.path.REF_ID"  description = "Property that holds the name of the document release's path ref id."/>
+
+
+    <!--
+      
+        This will extract the log information from subversion to XML format.
+
+
+        @Attributes
+
+            @attribute: @{dir}         = the directory in which to start gather log information
+
+            @attribute: @{file}        = the file that will contain the outputted XML.
+
+            @attribute: @{rev-start}   = the starting revision number.
+
+            @attribute:  @{rev-end}    = the ending revision number.
+
+            @attribute: @{description} = information about calling this macro.
+      
+    -->
+    <macrodef
+        name        = "svn-xml-log"
+        description = "Retrieve the log information from subversion in XML format."
+        uri         = "http://keros.sourceforge.net/project/svn">
+
+        <attribute  name = "dir"   description = "The directory in which to gather logging information."/>
+        <attribute  name = "file"  description = "The file that will contain the outputted XML."/>
+        <attribute  name = "rev-start"    default = "0"     description = "The starting revision number."/>
+        <attribute  name = "rev-end"      default = "HEAD"  description = "The ending revision number."/>
+        <attribute  name = "description"  default = ""      description = "Information about this macro call."/>
+
+        <sequential>
+            <ant-contrib:var  name = "keros-svn-project.svn-xml-log.SVN_LOG_DIR"  unset = "true"  description = "Holds the Subversion log directory name"/>
+
+            <dirname  file = "@{file}"  property = "keros-svn-project.svn-xml-log.SVN_LOG_DIR"/>
+
+            <mkdir  dir = "${keros-svn-project.svn-xml-log.SVN_LOG_DIR}"/>
+            
+            <exec  executable = "svn"  output = "@{file}"  failonerror = "true"  logerror = "true">
+                <arg  line = "log @{dir} --xml -r @{rev-start}:@{rev-end} -v"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+
+
+    <!--
+
+        Generates/converts Subversion output to HTML.
+
+
+        @Attributes
+            @attribute: @{src-dir}      = The base directory in which to gather Subversion log information.
+
+            @attribute: @{dest-dir}     = The directory in which the transformation will occur.
+
+            @attribute: @{log-file}    = The file that will contain the outputted XML.
+
+            @attribute: @{html-file}   = The file that will contain HTML conversion from @{log-file}.
+
+            @attribute: @{rev-start}   = The Subversion starting revision number.
+
+            @attribute: @{rev-end}     = The Subversion ending revision number.
+
+            @attribute: @{rev-end}     = The version number/value to include in the heading.
+
+            @attribute: @{version}     = the version number/value to include in the heading.
+
+            @attribute: @{description} = information about calling this macro.
+
+    -->
+    <macrodef
+        name        = "svn2html"
+        description = "Converts Subversion output to HTML"
+        uri         = "http://keros.sourceforge.net/project/svn">
+
+        <attribute  name = "src-dir"      description = "The base directory in which to gather Subversion log information."/>
+        <attribute  name = "dest-dir"     description = "The directory in which the transformation will occur."/>
+        <attribute  name = "log-file"     default = "${keros-svn-project.log.FILE}"        description = "The file that will contain the outputted XML."/>
+        <attribute  name = "html-file"    default = "${keros-svn-project.html.FILE_NAME}"  description = "The file that will contain HTML conversion from @{log-file}"/>
+        <attribute  name = "rev-start"    default = "0"                                    description = "The Subversion starting revision number."/>
+        <attribute  name = "rev-end"      default = "HEAD"                                 description = "The Subversion ending revision number."/>
+        <attribute  name = "version"      default = ""                                     description = "The version number/value to include in the heading."/>
+        <attribute  name = "description"  default = ""                                     description = "Information about this macro call."/>
+
+
+        <sequential>
+            <keros-svn-project:svn-xml-log  dir = "@{src-dir}"  file = "@{log-file}"  rev-start = "@{rev-start}"  rev-end = "@{rev-end}"/>
+
+            <xslt  in = "@{log-file}"  out = "@{dest-dir}/@{html-file}"  style = "${keros.xsl.HOME}/svn2html.xsl">
+                <param  name = "pVersion"  expression = "@{version}"/>
+            </xslt>
+
+            <keros:replace-url  file = "@{dest-dir}/@{html-file}"/>
+        </sequential>
+    </macrodef>
+
+
+    <!--
+
+        Will print all properties to the console.
+
+    -->
+    <target  name = "keros-svn-project.print.properties"  description = "Converts Ant scripts to HTML">
+        <echo>
+            ------------------------------------------------------------------
+
+                                KEROS SUBVERSION PROPERTIES
+
+            ------------------------------------------------------------------
+
+            keros-svn-project.generated.DIR_NAME          =  ${keros-svn-project.generated.DIR_NAME}
+            keros-svn-project.generated.HOME              =  ${keros-svn-project.generated.HOME}
+
+            keros-svn-project.document.generated.DIR_NAME =  ${keros-svn-project.document.generated.DIR_NAME}
+            keros-svn-project.document.generated.HOME     =  ${keros-svn-project.document.generated.HOME}
+
+            keros-svn-project.source.DIR                  =  ${keros-svn-project.source.DIR}
+            keros-svn-project.dest.DIR                    =  ${keros-svn-project.dest.DIR}
+
+            keros-svn-project.log.FILE_NAME               =  ${keros-svn-project.log.FILE_NAME}
+            keros-svn-project.log.FILE                    =  ${keros-svn-project.log.FILE}
+
+            keros-svn-project.document.INCLUDES           =  ${keros-svn-project.document.INCLUDES}
+
+            keros-svn-project.rev.START                   =  ${keros-svn-project.rev.START}
+            keros-svn-project.rev.END                     =  ${keros-svn-project.rev.END}
+
+        </echo>
+    </target>
+
+        <!-- ======================================================================== -->
+
+    <!--
+
+        Default logic to document Subversion logs...
+
+    -->
+    <target  name = "keros-svn-project.document"  unless = "keros-svn-project.document.SKIP"  description = "Default logic to document Subversion logs to HTML">
+        <keros-svn-project:svn2html  src-dir = "${keros-svn-project.source.DIR}"  dest-dir = "${keros-svn-project.dest.DIR}"  log-file = "${keros-svn-project.log.FILE}"  rev-start = "${keros-svn-project.rev.START}"  rev-end = "${keros-svn-project.rev.END}"  version = "${keros-base-project.release.VERSION}"/>
+    </target>
+
+
+    <target  name = "keros-svn-project.release"  depends = "keros-svn-project.document, keros-document-project.release"  description = "Convert Subversion logs to HTML then do a document release"/>
+
+
+    <!--
+
+        Generates HTML for Subversion logs - including pre/post processing...
+
+    -->
+    <target  name = "keros-base-project.release"  depends = "keros-svn-project.release"  description = "Overridden logic from keros-base-project for Ant documentation"/>
+
+    <!-- ======================================================================== -->
+
+
+</project>
